@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/tools" },
+    { "path": "./packages/cli" },
+    { "path": "./packages/mcp-server" },
+    { "path": "./packages/agentcore-runtime" },
+    { "path": "./packages/strands-agent" }
+  ]
+}

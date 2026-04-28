@@ -1,0 +1,26 @@
+{
+  "name": "@deck-forge/strands-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#/*": "./dist/*"
+  },
+  "scripts": {
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@deck-forge/core": "workspace:*",
+    "@deck-forge/tools": "workspace:*",
+    "@strands-agents/sdk": "^1.0.0-rc.5",
+    "zod": "^4.1.12"
+  }
+}

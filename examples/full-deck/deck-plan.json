@@ -1,0 +1,131 @@
+{
+  "id": "deckplan-full-001",
+  "briefId": "brief-full-001",
+  "title": "Manufacturing AI PoC — Exec Briefing",
+  "slideCountTarget": 10,
+  "globalStoryline": "Open with the OEE gap → show that manual detection is the root cause → introduce Vision AI as the solution → prove it with industry evidence → lay out a crisp 90-day pilot → quantify the financial upside → close with a clear ask.",
+  "sections": [
+    {
+      "id": "section-intro",
+      "title": "Introduction",
+      "role": "intro",
+      "slides": [
+        {
+          "id": "sp-01",
+          "title": "Manufacturing AI PoC",
+          "intent": { "type": "title", "keyMessage": "90-day AI pilot proposal", "audienceTakeaway": "This is a decision meeting, not an update." },
+          "expectedLayout": "title",
+          "contentRequirements": [{ "type": "title", "description": "Deck title + presenter name + date" }]
+        },
+        {
+          "id": "sp-02",
+          "title": "Agenda",
+          "intent": { "type": "agenda", "keyMessage": "Four topics in 20 minutes", "audienceTakeaway": "Know the structure before we dive in." },
+          "expectedLayout": "single_column",
+          "contentRequirements": [{ "type": "bullet_list", "description": "4-item agenda" }]
+        }
+      ]
+    },
+    {
+      "id": "section-problem",
+      "title": "The Problem",
+      "role": "problem",
+      "slides": [
+        {
+          "id": "sp-03",
+          "title": "We Are Leaving 12% OEE on the Table",
+          "intent": { "type": "problem", "keyMessage": "OEE gap is measurable and avoidable.", "audienceTakeaway": "This is a real, quantified problem." },
+          "expectedLayout": "two_column",
+          "contentRequirements": [
+            { "type": "metric", "description": "Current OEE % vs industry benchmark" },
+            { "type": "bullet_list", "description": "Top 3 root causes" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-solution",
+      "title": "The Solution",
+      "role": "solution",
+      "slides": [
+        {
+          "id": "sp-04",
+          "title": "Vision AI: Real-Time Defect Detection",
+          "intent": { "type": "architecture", "keyMessage": "Camera + model + edge compute = instant detection.", "audienceTakeaway": "The technology is proven and integrates with existing lines." },
+          "expectedLayout": "diagram_focus",
+          "contentRequirements": [{ "type": "diagram", "description": "System architecture: camera → edge device → MES/SAP" }],
+          "assetRequirements": [{ "type": "diagram", "description": "Flat vector architecture diagram" }]
+        },
+        {
+          "id": "sp-05",
+          "title": "Industry Evidence",
+          "intent": { "type": "data_insight", "keyMessage": "Peers achieved 8-12% OEE gain in 90 days.", "audienceTakeaway": "This is not speculative — it has been done." },
+          "expectedLayout": "dashboard",
+          "contentRequirements": [
+            { "type": "chart", "description": "Bar chart: OEE before/after at 3 peer plants" },
+            { "type": "callout", "description": "Key stat: average 10.4% improvement" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-implementation",
+      "title": "Implementation",
+      "role": "implementation",
+      "slides": [
+        {
+          "id": "sp-06",
+          "title": "90-Day Pilot Plan",
+          "intent": { "type": "timeline", "keyMessage": "Three clear phases, each with a gate review.", "audienceTakeaway": "We have a concrete, low-risk plan." },
+          "expectedLayout": "timeline",
+          "contentRequirements": [{ "type": "diagram", "description": "Timeline: Phase 1 Install (weeks 1-4), Phase 2 Train (weeks 5-10), Phase 3 Validate (weeks 11-13)" }]
+        },
+        {
+          "id": "sp-07",
+          "title": "Risk Register",
+          "intent": { "type": "decision", "keyMessage": "Three risks, all mitigated.", "audienceTakeaway": "We have thought through what could go wrong." },
+          "expectedLayout": "single_column",
+          "contentRequirements": [{ "type": "table", "description": "Risk | Likelihood | Mitigation" }]
+        }
+      ]
+    },
+    {
+      "id": "section-result",
+      "title": "Financial Impact",
+      "role": "result",
+      "slides": [
+        {
+          "id": "sp-08",
+          "title": "ROI Model",
+          "intent": { "type": "data_insight", "keyMessage": "$1.8M annual saving vs $180K investment.", "audienceTakeaway": "Payback in under 5 weeks at scale." },
+          "expectedLayout": "two_column",
+          "contentRequirements": [
+            { "type": "table", "description": "Cost line items vs projected savings" },
+            { "type": "metric", "description": "Payback period: 4.7 weeks" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-close",
+      "title": "Ask",
+      "role": "appendix",
+      "slides": [
+        {
+          "id": "sp-09",
+          "title": "Next Steps",
+          "intent": { "type": "proposal", "keyMessage": "Approve budget and assign sponsor today.", "audienceTakeaway": "Exact actions before you leave the room." },
+          "expectedLayout": "single_column",
+          "contentRequirements": [{ "type": "bullet_list", "description": "3 action items with owner and deadline" }]
+        },
+        {
+          "id": "sp-10",
+          "title": "Thank You",
+          "intent": { "type": "closing", "keyMessage": "Questions?", "audienceTakeaway": "Open discussion." },
+          "expectedLayout": "title",
+          "contentRequirements": [{ "type": "title", "description": "Thank you + contact details" }]
+        }
+      ]
+    }
+  ]
+}

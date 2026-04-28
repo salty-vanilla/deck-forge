@@ -1,0 +1,62 @@
+{
+  "id": "brief-full-001",
+  "title": "Manufacturing AI PoC — Exec Briefing",
+  "context": "Internal proposal to greenlight a 90-day AI pilot in our Chennai plant, targeting OEE improvement.",
+  "audience": {
+    "primary": "C-suite and VP Engineering",
+    "secondary": ["Plant Operations", "Finance"],
+    "expertiseLevel": "executive",
+    "expectedConcern": ["ROI timeline", "integration risk", "change management"],
+    "expectedQuestions": ["What's the payback period?", "How does this integrate with SAP?"]
+  },
+  "goal": {
+    "type": "proposal",
+    "mainMessage": "A 90-day AI pilot can improve OEE by 8-12 % with <$200K investment.",
+    "desiredOutcome": "Board approval and budget allocation by end of Q2.",
+    "successCriteria": [
+      "Pilot budget approved",
+      "Cross-functional team formed",
+      "Kick-off date set within 30 days"
+    ]
+  },
+  "tone": {
+    "formality": "executive",
+    "energy": "confident",
+    "technicalDepth": "low",
+    "styleKeywords": ["data-driven", "concise", "action-oriented"]
+  },
+  "narrative": {
+    "structure": "problem_solution",
+    "arc": [
+      { "role": "hook", "message": "We're leaving 12% OEE on the table every quarter." },
+      { "role": "problem", "message": "Manual defect detection is slow, inconsistent, and expensive." },
+      { "role": "solution", "message": "Vision AI on the assembly line catches defects in real time." },
+      { "role": "evidence", "message": "Peer plants saw 8-12% OEE gain within 90 days." },
+      { "role": "implementation", "message": "3-phase pilot: sensor install → model training → live validation." },
+      { "role": "impact", "message": "$1.8M annual saving at current production volume." },
+      { "role": "call_to_action", "message": "Approve $180K pilot budget today." }
+    ]
+  },
+  "output": {
+    "formats": ["pptx", "pdf"],
+    "aspectRatio": "16:9",
+    "language": "en"
+  },
+  "constraints": {
+    "slideCount": 10,
+    "durationMinutes": 20,
+    "mustInclude": ["ROI model", "pilot timeline", "risk register"],
+    "mustAvoid": ["technical jargon", "competitor names"]
+  },
+  "visualDirection": {
+    "style": "corporate",
+    "mood": "trustworthy",
+    "colorMood": "deep blue and slate, professional",
+    "composition": "data-forward, charts on right",
+    "avoid": ["stock-photo faces", "generic blue gradients"]
+  },
+  "brand": {
+    "name": "Acme Manufacturing",
+    "voice": "Direct, evidence-first, no fluff"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "kpi-grid",
+  "version": "1.0.0",
+  "capability": "kpi_grid",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "body", "visual"],
+  "layoutContract": {
+    "variant": "kpi_grid",
+    "regionRoles": ["title", "body", "visual"]
+  }
+}

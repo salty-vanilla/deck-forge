@@ -1,0 +1,143 @@
+{
+  "id": "full-deck-001",
+  "version": "1.0.0",
+  "meta": {
+    "title": "Manufacturing AI PoC — Exec Briefing",
+    "createdAt": "2026-04-28T00:00:00.000Z",
+    "updatedAt": "2026-04-28T00:00:00.000Z",
+    "author": "Acme Manufacturing"
+  },
+  "theme": {
+    "id": "corporate-blue",
+    "name": "Corporate Blue",
+    "colors": {
+      "background": "#FFFFFF",
+      "surface": "#F1F5F9",
+      "textPrimary": "#0F172A",
+      "textSecondary": "#475569",
+      "primary": "#1D4ED8",
+      "secondary": "#0EA5E9",
+      "accent": "#F59E0B",
+      "chartPalette": ["#1D4ED8", "#0EA5E9", "#14B8A6", "#F59E0B", "#EF4444"]
+    },
+    "typography": {
+      "fontFamily": { "heading": "Calibri", "body": "Calibri", "mono": "Courier New" },
+      "fontSize": { "title": 40, "heading": 28, "body": 18, "caption": 14, "footnote": 12 },
+      "lineHeight": { "tight": 1.1, "normal": 1.4, "relaxed": 1.7 },
+      "weight": { "regular": 400, "medium": 500, "bold": 700 }
+    },
+    "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "xxl": 48 },
+    "radius": { "sm": 4, "md": 8, "lg": 12, "full": 999 },
+    "slideDefaults": { "backgroundColor": "#FFFFFF", "padding": 80 },
+    "elementDefaults": {
+      "text": { "fontFamily": "Calibri", "fontSize": 18, "color": "#0F172A" }
+    }
+  },
+  "slides": [
+    {
+      "id": "slide-title",
+      "index": 0,
+      "title": "Manufacturing AI PoC",
+      "intent": {
+        "type": "title",
+        "keyMessage": "90-day AI pilot proposal",
+        "audienceTakeaway": "This is a decision meeting, not an update."
+      },
+      "layout": {
+        "spec": { "type": "title", "density": "low", "emphasis": "center" },
+        "slideSize": { "width": 1280, "height": 720, "unit": "px" },
+        "regions": [
+          {
+            "id": "title-region",
+            "role": "title",
+            "contentRefs": ["el-title"],
+            "priority": 1,
+            "frame": { "x": 80, "y": 240, "width": 1120, "height": 160 }
+          }
+        ]
+      },
+      "elements": [
+        {
+          "id": "el-title",
+          "type": "text",
+          "role": "title",
+          "text": {
+            "paragraphs": [
+              { "runs": [{ "text": "Manufacturing AI PoC" }], "alignment": "center" }
+            ]
+          },
+          "frame": { "x": 80, "y": 240, "width": 1120, "height": 160 },
+          "style": { "fontFamily": "Calibri", "fontSize": 40, "color": "#0F172A", "bold": true }
+        },
+        {
+          "id": "el-subtitle",
+          "type": "text",
+          "role": "subtitle",
+          "text": {
+            "paragraphs": [
+              { "runs": [{ "text": "Executive Briefing — Q2 2026" }], "alignment": "center" }
+            ]
+          },
+          "frame": { "x": 80, "y": 420, "width": 1120, "height": 60 },
+          "style": { "fontFamily": "Calibri", "fontSize": 22, "color": "#475569" }
+        }
+      ],
+      "speakerNotes": "Welcome everyone. Today we are asking for approval of a $180K pilot budget."
+    },
+    {
+      "id": "slide-problem",
+      "index": 1,
+      "title": "We Are Leaving 12% OEE on the Table",
+      "intent": {
+        "type": "problem",
+        "keyMessage": "OEE gap is measurable and avoidable.",
+        "audienceTakeaway": "This is a real, quantified problem."
+      },
+      "layout": {
+        "spec": { "type": "single_column", "density": "medium", "emphasis": "top" },
+        "slideSize": { "width": 1280, "height": 720, "unit": "px" },
+        "regions": [
+          {
+            "id": "body-region",
+            "role": "body",
+            "contentRefs": ["el-body"],
+            "priority": 1,
+            "frame": { "x": 80, "y": 160, "width": 1120, "height": 460 }
+          }
+        ]
+      },
+      "elements": [
+        {
+          "id": "el-slide-title",
+          "type": "text",
+          "role": "title",
+          "text": {
+            "paragraphs": [
+              { "runs": [{ "text": "We Are Leaving 12% OEE on the Table" }], "alignment": "left" }
+            ]
+          },
+          "frame": { "x": 80, "y": 80, "width": 1120, "height": 60 },
+          "style": { "fontFamily": "Calibri", "fontSize": 28, "color": "#1D4ED8", "bold": true }
+        },
+        {
+          "id": "el-body",
+          "type": "table",
+          "frame": { "x": 80, "y": 180, "width": 800, "height": 260 },
+          "headers": ["Root Cause", "OEE Impact", "Current Mitigation"],
+          "rows": [
+            ["Manual defect detection", "−5%", "Weekly visual audit"],
+            ["Unplanned downtime", "−4%", "Reactive maintenance"],
+            ["Speed loss (changeover)", "−3%", "Manual scheduling"]
+          ],
+          "style": {
+            "headerFill": "#1D4ED8",
+            "textStyle": { "fontFamily": "Calibri", "fontSize": 16, "color": "#0F172A" }
+          }
+        }
+      ],
+      "speakerNotes": "Walk through each root cause. Emphasize that manual detection alone accounts for 5 points of OEE."
+    }
+  ],
+  "assets": { "assets": [] },
+  "operationLog": []
+}

@@ -1,0 +1,84 @@
+{
+  "id": "minimal-001",
+  "version": "1.0.0",
+  "meta": {
+    "title": "Minimal Example",
+    "createdAt": "2026-04-28T00:00:00.000Z",
+    "updatedAt": "2026-04-28T00:00:00.000Z",
+    "author": "deck-forge"
+  },
+  "theme": {
+    "id": "default",
+    "name": "Default",
+    "colors": {
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "textPrimary": "#0F172A",
+      "textSecondary": "#64748B",
+      "primary": "#3B82F6",
+      "secondary": "#8B5CF6",
+      "accent": "#F59E0B",
+      "chartPalette": ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EF4444"]
+    },
+    "typography": {
+      "fontFamily": { "heading": "Calibri", "body": "Calibri" },
+      "fontSize": { "title": 36, "heading": 28, "body": 18, "caption": 14, "footnote": 12 },
+      "lineHeight": { "tight": 1.2, "normal": 1.5, "relaxed": 1.8 },
+      "weight": { "regular": 400, "medium": 500, "bold": 700 }
+    },
+    "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 40, "xxl": 64 },
+    "radius": { "sm": 4, "md": 8, "lg": 16, "full": 9999 },
+    "slideDefaults": { "backgroundColor": "#FFFFFF", "padding": 80 },
+    "elementDefaults": {
+      "text": {
+        "fontFamily": "Calibri",
+        "fontSize": 18,
+        "color": "#0F172A",
+        "bold": false,
+        "italic": false,
+        "underline": false
+      }
+    }
+  },
+  "slides": [
+    {
+      "id": "slide-1",
+      "index": 0,
+      "title": "Hello, deck-forge",
+      "intent": {
+        "type": "title",
+        "keyMessage": "Introducing deck-forge",
+        "audienceTakeaway": "Understand what deck-forge does"
+      },
+      "layout": {
+        "spec": { "type": "title", "density": "low", "emphasis": "center" },
+        "slideSize": { "width": 1280, "height": 720, "unit": "px" },
+        "regions": [
+          {
+            "id": "title-region",
+            "role": "title",
+            "contentRefs": ["el-title"],
+            "priority": 1,
+            "frame": { "x": 80, "y": 280, "width": 1120, "height": 160 }
+          }
+        ]
+      },
+      "elements": [
+        {
+          "id": "el-title",
+          "type": "text",
+          "role": "title",
+          "text": {
+            "paragraphs": [
+              { "runs": [{ "text": "Hello, deck-forge" }], "alignment": "center" }
+            ]
+          },
+          "frame": { "x": 80, "y": 280, "width": 1120, "height": 160 },
+          "style": { "fontFamily": "Calibri", "fontSize": 36, "color": "#0F172A", "bold": true }
+        }
+      ]
+    }
+  ],
+  "assets": { "assets": [] },
+  "operationLog": []
+}

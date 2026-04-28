@@ -1,0 +1,22 @@
+{
+  "id": "timeline",
+  "version": "1.0.0",
+  "capability": "timeline",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "body", "visual"],
+  "layoutContract": {
+    "variant": "timeline",
+    "regionRoles": ["title", "body", "visual"]
+  }
+}
