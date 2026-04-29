@@ -40,11 +40,11 @@ jobs:
       - name: Check formatting and lint rules
         run: pnpm check
 
-      - name: Run tests
-        run: pnpm test
-
       - name: Build packages
         run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
 
       - name: Publish packages
         run: pnpm -r --filter "./packages/*" publish --no-git-checks
