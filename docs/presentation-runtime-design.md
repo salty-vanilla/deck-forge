@@ -112,7 +112,7 @@ packages/tools
 adapters
   ├─ cli
   ├─ mcp-server
-  ├─ agentcore-runtime
+  ├─ agentcore-consumer-reference
   └─ api-server  ※後回し
 ```
 
@@ -187,7 +187,6 @@ presentation-runtime/
     operations.md
     validators.md
     exporters.md
-    agent-integration.md
 
   schemas/
     presentation-brief.schema.json
@@ -209,7 +208,6 @@ presentation-runtime/
     tools/
     cli/
     mcp-server/
-    agentcore-runtime/
     strands-agent/
     api-server/           # 後回し。初期は空でもよい
 ```
@@ -228,7 +226,7 @@ packages/
 
 ```text
 packages/
-  agentcore-runtime/
+  agentcore-consumer-reference/
   strands-agent/
   api-server/
   exporter-pptx-rs/
@@ -541,7 +539,7 @@ packages/core = domain/runtime
 
 ---
 
-## 10. packages/agentcore-runtime
+## 10. Agent integration (consumer-side)
 
 ### 10.1 役割
 
@@ -561,15 +559,9 @@ packages/tools
 presentation-core
 ```
 
-### 10.3 ディレクトリ
+### 10.3 実装場所
 
-```text
-packages/agentcore-runtime/src/
-  entrypoint.ts
-  presentationAgent.ts
-  runtimeConfig.ts
-  tools.ts
-```
+consumer-side の Agent runtime 実装はこのモノレポ外（利用側リポジトリ）で管理する。
 
 ### 10.4 公開する能力
 
@@ -2410,7 +2402,6 @@ export type OperationRecord = {
 ### 実装対象
 
 * strands-agent
-* agentcore-runtime
 * Presentation Agent prompts
 * tools integration
 * internal policy injection (`balanced` / `visual_heavy` / `data_heavy`)
@@ -2537,7 +2528,7 @@ Codexで実装する場合、最初の作業単位は以下がよい。
        ┌───────────────────────────┼───────────────────────────┐
        │                           │                           │
 ┌──────▼───────┐           ┌───────▼────────┐          ┌───────▼────────┐
-│ CLI          │           │ MCP Server     │          │ AgentCore      │
+│ CLI          │           │ MCP Server     │          │ Consumer Agent │
 │ local usage  │           │ Tool公開        │          │ Agent公開      │
 └──────┬───────┘           └───────┬────────┘          └───────┬────────┘
        │                           │                           │
@@ -2574,7 +2565,6 @@ ChatGPT風アプリ backend
 * `mcp-server`
 
   * 他Agent向け tool 公開
-* `agentcore-runtime`
 
   * 将来的な Presentation Agent 公開
 
