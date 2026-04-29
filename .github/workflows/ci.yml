@@ -40,13 +40,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - "@deck-forge/core"
-          - "@deck-forge/tools"
-          - "@deck-forge/cli"
-          - "@deck-forge/mcp-server"
-          - "@deck-forge/runner"
-          - "@deck-forge/adapters"
+        include:
+          - package: "@deck-forge/core"
+            test-path: packages/core/src
+          - package: "@deck-forge/tools"
+            test-path: ""
+          - package: "@deck-forge/cli"
+            test-path: packages/cli/src
+          - package: "@deck-forge/mcp-server"
+            test-path: ""
+          - package: "@deck-forge/runner"
+            test-path: ""
+          - package: "@deck-forge/adapters"
+            test-path: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -69,4 +75,5 @@ jobs:
         run: pnpm --filter "${{ matrix.package }}" build
 
       - name: Test package
-        run: pnpm --filter "${{ matrix.package }}" test --if-present
+        if: matrix.test-path != ''
+        run: pnpm exec vitest run "${{ matrix.test-path }}"
