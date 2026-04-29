@@ -1,8 +1,12 @@
 {
   "name": "@deck-forge/adapters",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "repository": "https://github.com/deck-forge/deck-forge.git",
+  "files": ["dist", "!dist/**/__tests__/**", "!dist/**/*.test.*", "!dist/tsconfig.tsbuildinfo"],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -19,6 +23,7 @@
     "#/*": "./dist/*"
   },
   "scripts": {
+    "build": "tsc -b",
     "typecheck": "tsc -b"
   },
   "dependencies": {
