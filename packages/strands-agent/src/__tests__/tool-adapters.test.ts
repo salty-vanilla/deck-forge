@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { createPresentationTools } from "#/tool-adapters.js";
 
 describe("createPresentationTools", () => {
-  it("returns 17 Strands-compatible tools", () => {
+  it("returns Strands-compatible tools", () => {
     const tools = createPresentationTools();
 
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(19);
   });
 
   it("each tool has name, description and handler", () => {

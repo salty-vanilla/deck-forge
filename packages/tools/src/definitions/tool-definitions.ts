@@ -120,6 +120,32 @@ export const presentationTools: ToolDefinition[] = [
     },
   },
   {
+    name: "presentation_review",
+    description: "Review a presentation and return actionable issues.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        presentation: { type: "object" },
+        report: { type: "object" },
+        goal: { type: "string" },
+      },
+      required: ["presentation"],
+    },
+  },
+  {
+    name: "presentation_plan_operations",
+    description: "Plan presentation operations from review issues.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        presentation: { type: "object" },
+        issues: { type: "array", items: { type: "object" } },
+        goal: { type: "string" },
+      },
+      required: ["presentation", "issues"],
+    },
+  },
+  {
     name: "presentation_add_chart",
     description: "Add a chart element to a target slide.",
     inputSchema: {

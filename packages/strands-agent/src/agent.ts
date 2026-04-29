@@ -1,4 +1,11 @@
-import type { PresentationBrief, PresentationRuntime, SlideSpec } from "@deck-forge/core";
+import type {
+  PresentationBrief,
+  PresentationIR,
+  PresentationOperation,
+  PresentationRuntime,
+  SlideSpec,
+  ValidationReport,
+} from "@deck-forge/core";
 import { autoFixPresentation } from "@deck-forge/core";
 import {
   applyPresentationOperationsHandler,
@@ -11,24 +18,27 @@ import {
   generateDeckPlanHandler,
   generateSlideSpecsHandler,
   inspectPresentationHandler,
+  planPresentationOperationsHandler,
+  reviewPresentationHandler,
+  setPresentationOperationPlanner,
+  setPresentationReviewer,
   validatePresentationHandler,
 } from "@deck-forge/tools";
-import type { IntentParser, StructuredIntent } from "@deck-forge/tools";
-import { Agent } from "@strands-agents/sdk";
-import { createPresentationTools } from "#/tool-adapters.js";
-
-type AgentConstructorConfig = ConstructorParameters<typeof Agent>[0];
-type StrandsAgentPassthroughConfig = Omit<AgentConstructorConfig, "tools" | "systemPrompt">;
+import type {
+  IntentParser,
+  PresentationOperationPlanner,
+  PresentationReviewer,
+  StructuredIntent,
+} from "@deck-forge/tools";
 
 export type StrandsPresentationAgentOptions = {
   runtime: PresentationRuntime;
   systemPrompt?: string;
-  /**
-   * Pass-through Agent config except `tools` and `systemPrompt`
-   * which are controlled by deck-forge adapter.
-   */
-  agentConfig?: StrandsAgentPassthroughConfig;
   intentParser?: IntentParser;
+  revisionPolicy?: "none" | "validation_only" | "ai_review";
+  maxRevisionLoops?: number;
+  reviewer?: PresentationReviewer;
+  operationPlanner?: PresentationOperationPlanner;
 };
 
 export type StrandsRunInput = {
@@ -58,14 +68,18 @@ type RunnerStep =
   | "apply_operations"
   | "validate"
   | "auto_fix"
+  | "review"
+  | "plan_operations"
   | "revalidate"
   | "export";
 
 type RunnerErrorCategory =
   | "input_error"
-  | "pipeline_error"
+  | "nlu_error"
   | "validation_error"
   | "export_error"
+  | "review_error"
+  | "pipeline_error"
   | "policy_error";
 
 type RunnerError = {
@@ -82,6 +96,12 @@ type RunnerTrace = {
   details?: string;
 };
 
+type RevisionSummary = {
+  policy: "none" | "validation_only" | "ai_review";
+  loopsExecuted: number;
+  operationsApplied: number;
+};
+
 export type StrandsRunResult = {
   finalStatus: "success" | "failed";
   mode: "create" | "modify";
@@ -93,6 +113,7 @@ export type StrandsRunResult = {
     missingCount: number;
     createdCount: number;
   };
+  revision?: RevisionSummary;
   errors: RunnerError[];
   trace?: RunnerTrace[];
 };
@@ -104,37 +125,10 @@ type PresentationPolicy = {
   visualPreset: "balanced" | "visual_heavy" | "data_heavy";
 };
 
-const DEFAULT_SYSTEM_PROMPT = `You are a Presentation Agent powered by deck-forge.
-You help users create professional presentations by orchestrating a multi-step pipeline.
-
-Available workflow:
-1. presentation_create_spec — Create a presentation brief from user request
-2. presentation_generate_deck_plan — Generate deck plan from brief
-3. presentation_generate_slide_specs — Generate slide specs from brief + deck plan
-4. presentation_generate_asset_plan — Generate asset specs from brief + slide specs
-5. presentation_build_ir — Build PresentationIR from all specs
-6. presentation_validate — Validate the presentation
-7. presentation_export — Export to pptx/html/json
-8. presentation_apply_operations — Apply modifications to the presentation
-9. presentation_inspect — Inspect presentation contents
-10. presentation_generate_image — Generate image assets
-
-When a user asks you to create a presentation, execute steps 1-7 in order.
-When a user asks for changes, use: apply_operations -> validate -> export.
-Return structured final output with: status, validation summary, export summary, and key artifact ids.`;
-
 export class StrandsPresentationAgent {
-  private readonly agent: Agent;
-
   constructor(private readonly options: StrandsPresentationAgentOptions) {
-    const tools = createPresentationTools();
-    const { agentConfig } = options;
-
-    this.agent = new Agent({
-      ...(agentConfig ?? {}),
-      tools,
-      systemPrompt: options.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
-    });
+    setPresentationReviewer(options.reviewer);
+    setPresentationOperationPlanner(options.operationPlanner);
   }
 
   async run(input: string | StrandsRunInput) {
@@ -147,6 +141,8 @@ export class StrandsPresentationAgent {
     const validationLevel = payload.validationLevel ?? "basic";
     const shouldAutoFix = payload.autoFix ?? true;
     const exportFormat = payload.exportFormat ?? "json";
+    const revisionPolicy = this.options.revisionPolicy ?? "none";
+    const maxRevisionLoops = Math.max(0, this.options.maxRevisionLoops ?? 2);
     const appliedPolicy = resolvePresentationPolicy(payload.goal, payload.acquisitionMode);
 
     try {
@@ -197,24 +193,17 @@ export class StrandsPresentationAgent {
             assetSpecs,
           }),
         );
-        let { report } = await this.runStep("validate", trace, async () =>
-          validatePresentationHandler({
-            presentation,
-            level: validationLevel,
-          }),
-        );
 
-        if (report.status === "failed" && shouldAutoFix) {
-          presentation = await this.runStep("auto_fix", trace, async () =>
-            autoFixPresentation(presentation, report),
-          );
-          ({ report } = await this.runStep("revalidate", trace, async () =>
-            validatePresentationHandler({
-              presentation,
-              level: validationLevel,
-            }),
-          ));
-        }
+        const revision = await this.runRevisionLoop({
+          presentation,
+          payload,
+          validationLevel,
+          shouldAutoFix,
+          revisionPolicy,
+          maxRevisionLoops,
+          trace,
+        });
+        presentation = revision.presentation;
 
         const { result: exportResult } = await this.runStep("export", trace, async () =>
           exportPresentationHandler({
@@ -236,12 +225,13 @@ export class StrandsPresentationAgent {
             assetSpecs,
             presentation,
           },
-          validationReport: report,
+          validationReport: revision.report,
           exportResult,
           componentTrace: {
             missingCount: componentPreflight.result.missing.length,
             createdCount: componentSynthesis.created.length,
           },
+          revision: revision.summary,
           errors,
           trace: includeTrace ? trace : undefined,
         } satisfies StrandsRunResult;
@@ -281,29 +271,19 @@ export class StrandsPresentationAgent {
           }),
       );
 
-      let { report } = await this.runStep("validate", trace, async () =>
-        validatePresentationHandler({
-          presentation: updatedPresentation,
-          level: validationLevel,
-        }),
-      );
-
-      let presentation = updatedPresentation;
-      if (report.status === "failed" && shouldAutoFix) {
-        presentation = await this.runStep("auto_fix", trace, async () =>
-          autoFixPresentation(updatedPresentation, report),
-        );
-        ({ report } = await this.runStep("revalidate", trace, async () =>
-          validatePresentationHandler({
-            presentation,
-            level: validationLevel,
-          }),
-        ));
-      }
+      const revision = await this.runRevisionLoop({
+        presentation: updatedPresentation,
+        payload,
+        validationLevel,
+        shouldAutoFix,
+        revisionPolicy,
+        maxRevisionLoops,
+        trace,
+      });
 
       const { result: exportResult } = await this.runStep("export", trace, async () =>
         exportPresentationHandler({
-          presentation,
+          presentation: revision.presentation,
           format: exportFormat,
           outputPath: payload.outputPath,
         }),
@@ -314,16 +294,17 @@ export class StrandsPresentationAgent {
         mode,
         appliedPolicy,
         artifacts: {
-          presentation,
+          presentation: revision.presentation,
           operations,
           structuredIntent,
         },
-        validationReport: report,
+        validationReport: revision.report,
         exportResult,
         componentTrace: {
           missingCount: 0,
           createdCount: 0,
         },
+        revision: revision.summary,
         errors,
         trace: includeTrace ? trace : undefined,
       } satisfies StrandsRunResult;
@@ -343,6 +324,107 @@ export class StrandsPresentationAgent {
         trace: includeTrace ? trace : undefined,
       } satisfies StrandsRunResult;
     }
+  }
+
+  private async runRevisionLoop(input: {
+    presentation: PresentationIR;
+    payload: StrandsRunInput;
+    validationLevel: "basic" | "strict" | "export";
+    shouldAutoFix: boolean;
+    revisionPolicy: "none" | "validation_only" | "ai_review";
+    maxRevisionLoops: number;
+    trace: RunnerTrace[];
+  }): Promise<{
+    presentation: PresentationIR;
+    report: ValidationReport;
+    summary: RevisionSummary;
+  }> {
+    let presentation = input.presentation;
+    let operationsApplied = 0;
+    let loopsExecuted = 0;
+
+    let { report } = await this.runStep("validate", input.trace, async () =>
+      validatePresentationHandler({
+        presentation,
+        level: input.validationLevel,
+      }),
+    );
+
+    while (loopsExecuted < input.maxRevisionLoops) {
+      if (report.status !== "failed") {
+        break;
+      }
+
+      loopsExecuted += 1;
+
+      if (input.shouldAutoFix) {
+        presentation = await this.runStep("auto_fix", input.trace, async () =>
+          autoFixPresentation(presentation, report),
+        );
+        ({ report } = await this.runStep("revalidate", input.trace, async () =>
+          validatePresentationHandler({
+            presentation,
+            level: input.validationLevel,
+          }),
+        ));
+        if (report.status !== "failed") {
+          break;
+        }
+      }
+
+      if (input.revisionPolicy !== "ai_review") {
+        break;
+      }
+
+      const reviewOutput = await this.runStep("review", input.trace, async () =>
+        reviewPresentationHandler({
+          presentation,
+          report,
+          goal: input.payload.goal,
+        }),
+      );
+      const issues = reviewOutput.issues;
+      if (issues.length === 0) {
+        break;
+      }
+
+      const planOutput = await this.runStep("plan_operations", input.trace, async () =>
+        planPresentationOperationsHandler({
+          presentation,
+          issues,
+          goal: input.payload.goal,
+        }),
+      );
+      const operations = planOutput.operations as PresentationOperation[];
+      if (operations.length === 0) {
+        break;
+      }
+
+      ({ presentation } = await this.runStep("apply_operations", input.trace, async () =>
+        applyPresentationOperationsHandler({
+          presentation,
+          operations,
+        }),
+      ));
+      operationsApplied += operations.length;
+
+      ({ report } = await this.runStep("revalidate", input.trace, async () =>
+        validatePresentationHandler({
+          presentation,
+          level: input.validationLevel,
+        }),
+      ));
+    }
+
+    return {
+      presentation,
+      report,
+      summary: {
+        policy: input.revisionPolicy,
+        loopsExecuted,
+        operationsApplied,
+      },
+    };
   }
 
   private async runStep<T>(
@@ -527,8 +609,14 @@ function classifyError(message: string): RunnerErrorCategory {
   if (message.includes("MODIFY_INPUT_ERROR")) {
     return "input_error";
   }
+  if (message.includes("NLU_PARSE_ERROR")) {
+    return "nlu_error";
+  }
   if (message.toLowerCase().includes("validation")) {
     return "validation_error";
+  }
+  if (message.toLowerCase().includes("review")) {
+    return "review_error";
   }
   if (message.toLowerCase().includes("export")) {
     return "export_error";

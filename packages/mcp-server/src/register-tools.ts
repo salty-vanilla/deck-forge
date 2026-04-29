@@ -13,6 +13,8 @@ import {
   generateSlideSpecsHandler,
   inspectPresentationHandler,
   listComponentsHandler,
+  planPresentationOperationsHandler,
+  reviewPresentationHandler,
   searchAssetsHandler,
   updateChartDataHandler,
   validatePresentationHandler,
@@ -236,6 +238,54 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
         const output = await applyPresentationOperationsHandler({
           presentation: presentation as never,
           operations: operations as never,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "presentation_review",
+    {
+      description: "Review a presentation and return actionable issues.",
+      inputSchema: {
+        presentation: anyObject,
+        report: anyObject.optional(),
+        goal: z.string().optional(),
+      },
+    },
+    async ({ presentation, report, goal }) => {
+      try {
+        const output = await reviewPresentationHandler({
+          presentation: presentation as never,
+          report: report as never,
+          goal,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "presentation_plan_operations",
+    {
+      description: "Plan presentation operations from review issues.",
+      inputSchema: {
+        presentation: anyObject,
+        issues: z.array(anyObject),
+        goal: z.string().optional(),
+      },
+    },
+    async ({ presentation, issues, goal }) => {
+      try {
+        const output = await planPresentationOperationsHandler({
+          presentation: presentation as never,
+          issues: issues as never,
+          goal,
         });
         return toToolResult(output);
       } catch (error) {

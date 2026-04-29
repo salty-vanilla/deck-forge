@@ -260,3 +260,40 @@ export type ParseRequestInput = {
 export type ParseRequestOutput = {
   intent: StructuredIntent;
 };
+
+export type ReviewIssue = {
+  code: string;
+  severity: "info" | "warning" | "error";
+  message: string;
+  slideId?: string;
+  elementId?: string;
+  suggestion?: string;
+};
+
+export type ReviewPresentationInput = {
+  presentation: PresentationIR;
+  report?: ValidationReport;
+  goal?: string;
+};
+
+export type ReviewPresentationOutput = {
+  issues: ReviewIssue[];
+};
+
+export interface PresentationReviewer {
+  review(input: ReviewPresentationInput): Promise<ReviewIssue[]>;
+}
+
+export type PlanPresentationOperationsInput = {
+  presentation: PresentationIR;
+  issues: ReviewIssue[];
+  goal?: string;
+};
+
+export type PlanPresentationOperationsOutput = {
+  operations: PresentationOperation[];
+};
+
+export interface PresentationOperationPlanner {
+  plan(input: PlanPresentationOperationsInput): Promise<PresentationOperation[]>;
+}

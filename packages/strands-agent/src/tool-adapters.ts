@@ -13,7 +13,9 @@ import {
   generateSlideSpecsHandler,
   inspectPresentationHandler,
   listComponentsHandler,
+  planPresentationOperationsHandler,
   presentationTools,
+  reviewPresentationHandler,
   searchAssetsHandler,
   updateChartDataHandler,
   validatePresentationHandler,
@@ -32,6 +34,8 @@ const handlerMap: Record<string, (input: Record<string, unknown>) => Promise<unk
   presentation_build_ir: async (input) => buildPresentationIrHandler(input as never),
   presentation_apply_operations: async (input) =>
     applyPresentationOperationsHandler(input as never),
+  presentation_review: async (input) => reviewPresentationHandler(input as never),
+  presentation_plan_operations: async (input) => planPresentationOperationsHandler(input as never),
   presentation_add_chart: async (input) => addChartHandler(input as never),
   presentation_update_chart_data: async (input) => updateChartDataHandler(input as never),
   presentation_inspect: async (input) => inspectPresentationHandler(input as never),

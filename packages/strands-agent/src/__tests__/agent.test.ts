@@ -101,7 +101,37 @@ describe("StrandsPresentationAgent", () => {
 
     expect(result.finalStatus).toBe("failed");
     expect(result.appliedPolicy).toBeDefined();
-    expect(result.errors[0]?.category).toBe("pipeline_error");
+    expect(result.errors[0]?.category).toBe("nlu_error");
     expect(result.errors[0]?.message).toContain("NLU_PARSE_ERROR");
+  });
+
+  it("supports validation_only policy without reviewer/planner", async () => {
+    const agent = new StrandsPresentationAgent({
+      runtime: {} as never,
+      revisionPolicy: "validation_only",
+      maxRevisionLoops: 1,
+      intentParser: {
+        parseCreate: async () => ({
+          mode: "create",
+          confidence: 0.95,
+          audience: "ops",
+          goal: "test",
+        }),
+        parseModify: async () => ({
+          mode: "modify",
+          confidence: 0.95,
+          modifyIntent: { changeRequest: "none", operations: [] },
+        }),
+      },
+    });
+
+    const result = await agent.run({
+      goal: "Simple request",
+      mode: "create",
+      exportFormat: "json",
+    });
+
+    expect(result.finalStatus).toBe("success");
+    expect(result.revision?.policy).toBe("validation_only");
   });
 });

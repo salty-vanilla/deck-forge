@@ -18,6 +18,16 @@ export {
   parseRequestHandler,
   setIntentParser,
 } from "#/handlers/parse-request-handler.js";
+export {
+  getPresentationOperationPlanner,
+  planPresentationOperationsHandler,
+  setPresentationOperationPlanner,
+} from "#/handlers/plan-presentation-operations-handler.js";
+export {
+  getPresentationReviewer,
+  reviewPresentationHandler,
+  setPresentationReviewer,
+} from "#/handlers/review-presentation-handler.js";
 export { searchAssetsHandler } from "#/handlers/search-assets-handler.js";
 export { updateChartDataHandler } from "#/handlers/update-chart-data-handler.js";
 export { validatePresentationHandler } from "#/handlers/validate-presentation-handler.js";
@@ -51,10 +61,17 @@ export type {
   ListComponentsInput,
   ListComponentsOutput,
   IntentParser,
+  PlanPresentationOperationsInput,
+  PlanPresentationOperationsOutput,
+  PresentationOperationPlanner,
+  PresentationReviewer,
   SearchAssetsInput,
   SearchAssetsOutput,
   ParseRequestInput,
   ParseRequestOutput,
+  ReviewIssue,
+  ReviewPresentationInput,
+  ReviewPresentationOutput,
   StructuredIntent,
   ToolDefinition,
   UpdateChartDataInput,
