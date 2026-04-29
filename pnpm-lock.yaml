@@ -24,14 +24,17 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.12.2)(yaml@2.8.3)
 
-  packages/agentcore-runtime:
+  packages/adapters:
     dependencies:
-      '@deck-forge/core':
-        specifier: workspace:*
-        version: link:../core
       '@deck-forge/tools':
         specifier: workspace:*
         version: link:../tools
+      '@strands-agents/sdk':
+        specifier: ^1.0.0-rc.5
+        version: 1.0.0-rc.5(@modelcontextprotocol/sdk@1.29.0(zod@4.3.6))(@opentelemetry/api@1.9.1)(express@5.2.1)(zod@4.3.6)
+      zod:
+        specifier: ^4.1.12
+        version: 4.3.6
 
   packages/cli:
     dependencies:
@@ -66,7 +69,7 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
-  packages/strands-agent:
+  packages/runner:
     dependencies:
       '@deck-forge/core':
         specifier: workspace:*
@@ -74,12 +77,6 @@ importers:
       '@deck-forge/tools':
         specifier: workspace:*
         version: link:../tools
-      '@strands-agents/sdk':
-        specifier: ^1.0.0-rc.5
-        version: 1.0.0-rc.5(@modelcontextprotocol/sdk@1.29.0(zod@4.3.6))(@opentelemetry/api@1.9.1)(express@5.2.1)(zod@4.3.6)
-      zod:
-        specifier: ^4.1.12
-        version: 4.3.6
 
   packages/tools:
     dependencies:

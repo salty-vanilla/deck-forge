@@ -7,6 +7,8 @@ const packageSrcRoots = [
   "packages/tools/src",
   "packages/cli/src",
   "packages/mcp-server/src",
+  "packages/runner/src",
+  "packages/adapters/src",
 ];
 
 export default defineConfig({

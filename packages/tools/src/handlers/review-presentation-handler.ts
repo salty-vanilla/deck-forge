@@ -17,11 +17,12 @@ export function getPresentationReviewer(): PresentationReviewer | undefined {
 export async function reviewPresentationHandler(
   input: ReviewPresentationInput,
 ): Promise<ReviewPresentationOutput> {
-  const currentReviewer = reviewer;
+  const currentReviewer = input.reviewer ?? reviewer;
   if (!currentReviewer) {
     throw new Error("REVIEWER_ERROR: PresentationReviewer is not configured.");
   }
 
-  const issues = await currentReviewer.review(input);
+  const { reviewer: _reviewer, ...reviewInput } = input;
+  const issues = await currentReviewer.review(reviewInput);
   return { issues };
 }

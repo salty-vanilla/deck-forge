@@ -20,8 +20,6 @@ import {
   inspectPresentationHandler,
   planPresentationOperationsHandler,
   reviewPresentationHandler,
-  setPresentationOperationPlanner,
-  setPresentationReviewer,
   validatePresentationHandler,
 } from "@deck-forge/tools";
 import type {
@@ -31,9 +29,8 @@ import type {
   StructuredIntent,
 } from "@deck-forge/tools";
 
-export type StrandsPresentationAgentOptions = {
+export type DeckForgeRunnerOptions = {
   runtime: PresentationRuntime;
-  systemPrompt?: string;
   intentParser?: IntentParser;
   revisionPolicy?: "none" | "validation_only" | "ai_review";
   maxRevisionLoops?: number;
@@ -41,7 +38,7 @@ export type StrandsPresentationAgentOptions = {
   operationPlanner?: PresentationOperationPlanner;
 };
 
-export type StrandsRunInput = {
+export type DeckForgeRunInput = {
   goal: string;
   mode?: "create" | "modify";
   exportFormat?: "pptx" | "html" | "json" | "pdf";
@@ -113,7 +110,7 @@ type RevisionTraceEntry = {
   stopReason?: string;
 };
 
-export type StrandsRunResult = {
+export type DeckForgeRunResult = {
   finalStatus: "success" | "failed";
   mode: "create" | "modify";
   appliedPolicy: PresentationPolicy;
@@ -136,8 +133,8 @@ type PresentationPolicy = {
   visualPreset: "balanced" | "visual_heavy" | "data_heavy";
 };
 
-export class StrandsPresentationAgent {
-  constructor(private readonly options: StrandsPresentationAgentOptions) {
+export class DeckForgeRunner {
+  constructor(private readonly options: DeckForgeRunnerOptions) {
     if (
       options.revisionPolicy === "ai_review" &&
       (!options.reviewer || !options.operationPlanner)
@@ -146,12 +143,10 @@ export class StrandsPresentationAgent {
         "REVIEWER_ERROR: ai_review policy requires both reviewer and operationPlanner.",
       );
     }
-    setPresentationReviewer(options.reviewer);
-    setPresentationOperationPlanner(options.operationPlanner);
   }
 
-  async run(input: string | StrandsRunInput) {
-    const payload: StrandsRunInput =
+  async run(input: string | DeckForgeRunInput) {
+    const payload: DeckForgeRunInput =
       typeof input === "string" ? { goal: input, mode: "create" } : input;
     const mode = payload.mode ?? "create";
     const trace: RunnerTrace[] = [];
@@ -160,8 +155,8 @@ export class StrandsPresentationAgent {
     const validationLevel = payload.validationLevel ?? "basic";
     const shouldAutoFix = payload.autoFix ?? true;
     const exportFormat = payload.exportFormat ?? "json";
-    const revisionPolicy = this.options.revisionPolicy ?? "none";
-    const maxRevisionLoops = Math.max(0, this.options.maxRevisionLoops ?? 2);
+    const revisionPolicy = this.options.revisionPolicy ?? "validation_only";
+    const maxRevisionLoops = Math.min(5, Math.max(0, this.options.maxRevisionLoops ?? 2));
     const appliedPolicy = resolvePresentationPolicy(payload.goal, payload.acquisitionMode);
 
     try {
@@ -253,7 +248,7 @@ export class StrandsPresentationAgent {
           revision: revision.summary,
           errors,
           trace: includeTrace ? trace : undefined,
-        } satisfies StrandsRunResult;
+        } satisfies DeckForgeRunResult;
       }
 
       if (!payload.presentation) {
@@ -326,7 +321,7 @@ export class StrandsPresentationAgent {
         revision: revision.summary,
         errors,
         trace: includeTrace ? trace : undefined,
-      } satisfies StrandsRunResult;
+      } satisfies DeckForgeRunResult;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({
@@ -341,13 +336,13 @@ export class StrandsPresentationAgent {
         artifacts: {},
         errors,
         trace: includeTrace ? trace : undefined,
-      } satisfies StrandsRunResult;
+      } satisfies DeckForgeRunResult;
     }
   }
 
   private async runRevisionLoop(input: {
     presentation: PresentationIR;
-    payload: StrandsRunInput;
+    payload: DeckForgeRunInput;
     validationLevel: "basic" | "strict" | "export";
     shouldAutoFix: boolean;
     revisionPolicy: "none" | "validation_only" | "ai_review";
@@ -362,6 +357,7 @@ export class StrandsPresentationAgent {
     let operationsApplied = 0;
     let loopsExecuted = 0;
     const revisionTrace: RevisionTraceEntry[] = [];
+    const seenOperationHashes = new Set<string>();
 
     let { report } = await this.runStep("validate", input.trace, async () =>
       validatePresentationHandler({
@@ -406,11 +402,13 @@ export class StrandsPresentationAgent {
       while (loopsExecuted < input.maxRevisionLoops && report.status === "failed") {
         loopsExecuted += 1;
         const prevErrorCount = report.summary.errorCount;
+        const prevIssueCount = report.issues.length;
         const reviewOutput = await this.runStep("review", input.trace, async () =>
           reviewPresentationHandler({
             presentation,
             report,
             goal: input.payload.goal,
+            reviewer: this.options.reviewer,
           }),
         );
         const issues = reviewOutput.issues;
@@ -431,9 +429,11 @@ export class StrandsPresentationAgent {
             presentation,
             issues,
             goal: input.payload.goal,
+            operationPlanner: this.options.operationPlanner,
           }),
         );
         const operations = planOutput.operations as PresentationOperation[];
+        const operationHash = stableHashFromOperations(operations);
         if (operations.length === 0) {
           revisionTrace.push({
             loopIndex: loopsExecuted,
@@ -445,6 +445,20 @@ export class StrandsPresentationAgent {
           });
           break;
         }
+
+        if (seenOperationHashes.has(operationHash)) {
+          revisionTrace.push({
+            loopIndex: loopsExecuted,
+            issueCount: issues.length,
+            operationCount: operations.length,
+            operationHash,
+            validationStatus: report.status,
+            validationErrorCount: report.summary.errorCount,
+            stopReason: "repeated_operations",
+          });
+          break;
+        }
+        seenOperationHashes.add(operationHash);
 
         ({ presentation } = await this.runStep("apply_operations", input.trace, async () =>
           applyPresentationOperationsHandler({
@@ -461,12 +475,12 @@ export class StrandsPresentationAgent {
           }),
         ));
         const improved =
-          report.summary.errorCount < prevErrorCount || report.issues.length < issues.length;
+          report.summary.errorCount < prevErrorCount || report.issues.length < prevIssueCount;
         revisionTrace.push({
           loopIndex: loopsExecuted,
           issueCount: issues.length,
           operationCount: operations.length,
-          operationHash: stableHashFromOperations(operations),
+          operationHash,
           validationStatus: report.status,
           validationErrorCount: report.summary.errorCount,
           stopReason: improved ? undefined : "no_issue_or_validation_improvement",

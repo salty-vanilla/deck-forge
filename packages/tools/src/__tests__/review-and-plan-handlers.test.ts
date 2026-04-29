@@ -49,4 +49,49 @@ describe("review/plan handlers", () => {
     expect(review.issues).toHaveLength(1);
     expect(plan.operations).toHaveLength(1);
   });
+
+  it("prefers input adapters over module-level fallback adapters", async () => {
+    setPresentationReviewer({
+      review: async () => [
+        {
+          code: "fallback",
+          severity: "warning",
+          message: "fallback",
+        },
+      ],
+    });
+    setPresentationOperationPlanner({
+      plan: async () => [],
+    });
+
+    const review = await reviewPresentationHandler({
+      presentation: {} as never,
+      reviewer: {
+        review: async () => [
+          {
+            code: "input",
+            severity: "warning",
+            message: "input",
+          },
+        ],
+      },
+    });
+    const plan = await planPresentationOperationsHandler({
+      presentation: {} as never,
+      issues: review.issues,
+      operationPlanner: {
+        plan: async () => [
+          {
+            type: "update_text",
+            slideId: "s1",
+            elementId: "t1",
+            text: "input",
+          },
+        ],
+      },
+    });
+
+    expect(review.issues[0]?.code).toBe("input");
+    expect(plan.operations).toHaveLength(1);
+  });
 });

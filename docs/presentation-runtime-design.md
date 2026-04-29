@@ -89,7 +89,7 @@ REST API は初期優先度を下げる。
 2. `packages/tools`
 3. CLI
 4. MCP Server
-5. AgentCore Runtime / Strands Agent adapter
+5. Runner / optional external adapters
 
 ### 3.2 REST API の扱い
 
@@ -208,7 +208,7 @@ presentation-runtime/
     tools/
     cli/
     mcp-server/
-    strands-agent/
+    runner/
     api-server/           # 後回し。初期は空でもよい
 ```
 
@@ -220,6 +220,8 @@ packages/
   tools/
   cli/
   mcp-server/
+  runner/
+  adapters/
 ```
 
 ### 5.3 後続で追加・強化する package
@@ -227,7 +229,8 @@ packages/
 ```text
 packages/
   agentcore-consumer-reference/
-  strands-agent/
+  runner/
+  adapters/
   api-server/
   exporter-pptx-rs/
 ```
@@ -598,44 +601,74 @@ Agent公開:
 
 ---
 
-## 11. packages/strands-agent
+## 11. packages/runner
 
 ### 11.1 役割
 
-Strands を使う場合の Agent 実装置き場。
+`packages/runner` は deck-forge の中核実行器である。
+
+責務:
+
+* `DeckForgeRunner`
+* create / modify workflow
+* validation
+* auto-fix
+* bounded revision loop
+* export
+* trace / error / revision summary
+
+Runner は AgentCore / Strands / AWS / Bedrock / MCP を知らない。
+外部連携は adapter 側で扱う。
 
 ### 11.2 構成
 
 ```text
-packages/strands-agent/src/
-  agent.ts
-  toolAdapters.ts
-  prompts/
-    planner.md
-    slide-writer.md
-    visual-designer.md
-    reviewer.md
+packages/runner/src/
+  runner.ts
+  index.ts
 ```
 
-### 11.3 Agent の内部構成
+### 11.3 Revision policy
+
+`validation_only`:
 
 ```text
-Presentation Agent
-  ├─ Planner capability
-  ├─ Slide Writer capability
-  ├─ Visual Designer capability
-  ├─ Reviewer capability
-  └─ Tool access
-      ├─ presentation_create_spec
-      ├─ presentation_generate_deck_plan
-      ├─ presentation_generate_slide_specs
-      ├─ presentation_generate_asset_plan
-      ├─ presentation_apply_operations
-      ├─ presentation_inspect
-      ├─ presentation_validate
-      ├─ presentation_export
-      └─ presentation_generate_image
+validate -> autoFixPresentation -> revalidate
 ```
+
+`ai_review`:
+
+```text
+validate -> review -> plan -> apply_operations -> revalidate
+```
+
+`ai_review` では validation report を reviewer に渡す。
+AI review は validation 結果を踏まえて `ReviewIssue[]` を返し、operation planner が `PresentationOperation[]` に変換する。
+修正適用は必ず `applyPresentationOperationsHandler` 経由にする。
+
+### 11.4 packages/adapters
+
+`packages/adapters` は optional integration package である。
+
+責務:
+
+* Strands tool adapter
+* 将来の AgentCore deployment adapter
+* 将来の AWS / S3 artifact publisher
+* 将来の Bedrock reviewer / operation planner adapter
+* 将来の MCP adapter 共通化
+
+Import policy:
+
+* `@deck-forge/adapters/strands` を Strands adapter の主要 import path にする
+* `@deck-forge/adapters` root から Strands 固有実装は export しない
+* root export は空、または将来的な adapter 共通型のみに限定する
+
+Strands は Planner Agent 側、または reviewer / operation planner adapter の実装詳細として使う。
+AgentCore は deployment adapter の1つであり、runner 本体ではない。
+
+`setPresentationReviewer` / `setPresentationOperationPlanner` は MCP / standalone tools 向け fallback API として残す。
+Runner 用途では非推奨であり、Runner は input adapter を handler に渡す。
 
 ---
 
@@ -2397,19 +2430,20 @@ export type OperationRecord = {
 
 ---
 
-## Phase 8: AgentCore / Strands Agent
+## Phase 8: Runner / External Adapters
 
 ### 実装対象
 
-* strands-agent
-* Presentation Agent prompts
-* tools integration
+* runner
+* adapters
+* `@deck-forge/adapters/strands`
 * internal policy injection (`balanced` / `visual_heavy` / `data_heavy`)
 * component preflight / synthesize integration
 
 ### 受け入れ条件
 
-* 「この目的のプレゼンを作って」という高レベル依頼から、spec設計、生成、検証、exportまで実行できる
+* Runner が spec設計、生成、検証、revision、exportまで実行できる
+* Strands tool adapter は `@deck-forge/adapters/strands` から import できる
 * create workflow で component preflight -> optional synthesize が実行される
 * 結果に `appliedPolicy` と `componentTrace` が含まれる
 

@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { createPresentationTools } from "#/tool-adapters.js";
+import * as rootAdapters from "#/index.js";
+import { createPresentationTools } from "#/strands/index.js";
 
 describe("createPresentationTools", () => {
+  it("does not export Strands-specific APIs from the adapters root", () => {
+    expect(rootAdapters).not.toHaveProperty("createPresentationTools");
+    expect(Object.keys(rootAdapters)).toEqual([]);
+  });
+
   it("returns Strands-compatible tools", () => {
     const tools = createPresentationTools();
 
@@ -22,6 +28,8 @@ describe("createPresentationTools", () => {
       "presentation_generate_asset_plan",
       "presentation_build_ir",
       "presentation_apply_operations",
+      "presentation_review",
+      "presentation_plan_operations",
       "presentation_add_chart",
       "presentation_update_chart_data",
       "presentation_inspect",

@@ -19,11 +19,12 @@ export function getPresentationOperationPlanner(): PresentationOperationPlanner 
 export async function planPresentationOperationsHandler(
   input: PlanPresentationOperationsInput,
 ): Promise<PlanPresentationOperationsOutput> {
-  const currentPlanner = operationPlanner;
+  const currentPlanner = input.operationPlanner ?? operationPlanner;
   if (!currentPlanner) {
     throw new Error("REVIEWER_ERROR: PresentationOperationPlanner is not configured.");
   }
 
-  const operations = await currentPlanner.plan(input);
+  const { operationPlanner: _operationPlanner, ...planInput } = input;
+  const operations = await currentPlanner.plan(planInput);
   return { operations };
 }

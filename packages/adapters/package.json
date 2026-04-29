@@ -1,5 +1,5 @@
 {
-  "name": "@deck-forge/strands-agent",
+  "name": "@deck-forge/adapters",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./strands": {
+      "types": "./dist/strands/index.d.ts",
+      "default": "./dist/strands/index.js"
     }
   },
   "imports": {
@@ -18,7 +22,6 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@deck-forge/core": "workspace:*",
     "@deck-forge/tools": "workspace:*",
     "@strands-agents/sdk": "^1.0.0-rc.5",
     "zod": "^4.1.12"

@@ -23,7 +23,10 @@ import {
 import { tool } from "@strands-agents/sdk";
 import { z } from "zod";
 
-const handlerMap: Record<string, (input: Record<string, unknown>) => Promise<unknown>> = {
+export type StrandsPresentationTool = ReturnType<typeof tool>;
+export type StrandsPresentationToolHandler = (input: Record<string, unknown>) => Promise<unknown>;
+
+const handlerMap: Record<string, StrandsPresentationToolHandler> = {
   presentation_create_spec: async (input) => createPresentationSpecHandler(input as never),
   presentation_generate_deck_plan: async (input) => generateDeckPlanHandler(input as never),
   presentation_generate_slide_specs: async (input) => generateSlideSpecsHandler(input as never),
@@ -80,7 +83,7 @@ function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType {
   return z.object(shape).passthrough();
 }
 
-export function createPresentationTools() {
+export function createPresentationTools(): StrandsPresentationTool[] {
   return presentationTools.map((def) => {
     const handler = handlerMap[def.name];
     if (!handler) {

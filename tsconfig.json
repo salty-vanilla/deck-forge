@@ -14,7 +14,10 @@
       "path": "./packages/mcp-server"
     },
     {
-      "path": "./packages/strands-agent"
+      "path": "./packages/runner"
+    },
+    {
+      "path": "./packages/adapters"
     }
   ]
 }

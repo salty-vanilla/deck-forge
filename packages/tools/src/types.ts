@@ -274,6 +274,7 @@ export type ReviewPresentationInput = {
   presentation: PresentationIR;
   report?: ValidationReport;
   goal?: string;
+  reviewer?: PresentationReviewer;
 };
 
 export type ReviewPresentationOutput = {
@@ -288,6 +289,7 @@ export type PlanPresentationOperationsInput = {
   presentation: PresentationIR;
   issues: ReviewIssue[];
   goal?: string;
+  operationPlanner?: PresentationOperationPlanner;
 };
 
 export type PlanPresentationOperationsOutput = {
