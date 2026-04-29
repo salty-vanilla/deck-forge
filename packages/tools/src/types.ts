@@ -221,3 +221,42 @@ export type AttachRetrievedAssetOutput = {
   asset: Asset;
   presentation: PresentationIR;
 };
+
+export type StructuredIntent = {
+  mode: "create" | "modify";
+  audience?: string;
+  goal?: string;
+  slideCount?: number;
+  tone?: string;
+  visualPreset?: "balanced" | "visual_heavy" | "data_heavy";
+  constraints?: {
+    mustInclude?: string[];
+    mustAvoid?: string[];
+  };
+  modifyIntent?: {
+    targetSlideId?: string;
+    changeRequest: string;
+    operations?: PresentationOperation[];
+  };
+  confidence: number;
+  rationale?: string;
+  missingFields?: string[];
+};
+
+export interface IntentParser {
+  parseCreate(input: { userRequest: string }): Promise<StructuredIntent>;
+  parseModify(input: {
+    userRequest: string;
+    inspectSummary?: Record<string, unknown>;
+  }): Promise<StructuredIntent>;
+}
+
+export type ParseRequestInput = {
+  mode: "create" | "modify";
+  userRequest: string;
+  inspectSummary?: Record<string, unknown>;
+};
+
+export type ParseRequestOutput = {
+  intent: StructuredIntent;
+};

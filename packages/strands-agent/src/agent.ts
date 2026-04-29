@@ -13,6 +13,7 @@ import {
   inspectPresentationHandler,
   validatePresentationHandler,
 } from "@deck-forge/tools";
+import type { IntentParser, StructuredIntent } from "@deck-forge/tools";
 import { Agent } from "@strands-agents/sdk";
 import { createPresentationTools } from "#/tool-adapters.js";
 
@@ -27,6 +28,7 @@ export type StrandsPresentationAgentOptions = {
    * which are controlled by deck-forge adapter.
    */
   agentConfig?: StrandsAgentPassthroughConfig;
+  intentParser?: IntentParser;
 };
 
 export type StrandsRunInput = {
@@ -44,6 +46,7 @@ export type StrandsRunInput = {
 };
 
 type RunnerStep =
+  | "parse_request"
   | "create_spec"
   | "generate_deck_plan"
   | "generate_slide_specs"
@@ -148,8 +151,17 @@ export class StrandsPresentationAgent {
 
     try {
       if (mode === "create") {
+        const structuredIntent = await this.runStep("parse_request", trace, async () =>
+          parseCreateIntent(this.options.intentParser, payload.goal),
+        );
         const { brief: createdBrief } = await this.runStep("create_spec", trace, async () =>
-          createPresentationSpecHandler({ userRequest: payload.goal }),
+          createPresentationSpecHandler({
+            userRequest: payload.goal,
+            audience: structuredIntent.audience,
+            goal: structuredIntent.goal,
+            slideCount: structuredIntent.slideCount,
+            tone: structuredIntent.tone,
+          }),
         );
         const brief = applyPolicyToBrief(createdBrief, appliedPolicy);
         const { deckPlan } = await this.runStep("generate_deck_plan", trace, async () =>
@@ -217,6 +229,7 @@ export class StrandsPresentationAgent {
           mode,
           appliedPolicy,
           artifacts: {
+            structuredIntent,
             brief,
             deckPlan,
             slideSpecs,
@@ -237,11 +250,8 @@ export class StrandsPresentationAgent {
       if (!payload.presentation) {
         throw new Error("MODIFY_INPUT_ERROR: presentation is required for modify mode.");
       }
-      if (!Array.isArray(payload.operations)) {
-        throw new Error("MODIFY_INPUT_ERROR: operations[] is required for modify mode.");
-      }
 
-      await this.runStep("inspect", trace, async () =>
+      const inspectResult = await this.runStep("inspect", trace, async () =>
         inspectPresentationHandler({
           presentation: payload.presentation as never,
           query:
@@ -252,13 +262,22 @@ export class StrandsPresentationAgent {
         }),
       );
 
+      const structuredIntent = await this.runStep("parse_request", trace, async () =>
+        parseModifyIntent(this.options.intentParser, payload.goal, inspectResult.result as never),
+      );
+
+      const operations = payload.operations ?? structuredIntent.modifyIntent?.operations;
+      if (!Array.isArray(operations) || operations.length === 0) {
+        throw new Error("NLU_PARSE_ERROR: modify intent did not provide operations.");
+      }
+
       const { presentation: updatedPresentation } = await this.runStep(
         "apply_operations",
         trace,
         async () =>
           applyPresentationOperationsHandler({
             presentation: payload.presentation as never,
-            operations: payload.operations as never,
+            operations: operations as never,
           }),
       );
 
@@ -296,7 +315,8 @@ export class StrandsPresentationAgent {
         appliedPolicy,
         artifacts: {
           presentation,
-          operations: payload.operations,
+          operations,
+          structuredIntent,
         },
         validationReport: report,
         exportResult,
@@ -351,6 +371,42 @@ export class StrandsPresentationAgent {
       });
       throw error;
     }
+  }
+}
+
+async function parseCreateIntent(
+  parser: IntentParser | undefined,
+  userRequest: string,
+): Promise<StructuredIntent> {
+  if (!parser) {
+    throw new Error("NLU_PARSE_ERROR: IntentParser is required for create mode.");
+  }
+  const intent = await parser.parseCreate({ userRequest });
+  assertIntentConfidence(intent);
+  return intent;
+}
+
+async function parseModifyIntent(
+  parser: IntentParser | undefined,
+  userRequest: string,
+  inspectSummary: Record<string, unknown>,
+): Promise<StructuredIntent> {
+  if (!parser) {
+    throw new Error("NLU_PARSE_ERROR: IntentParser is required for modify mode.");
+  }
+  const intent = await parser.parseModify({ userRequest, inspectSummary });
+  assertIntentConfidence(intent);
+  return intent;
+}
+
+function assertIntentConfidence(intent: StructuredIntent): void {
+  if (intent.confidence < 0.7) {
+    throw new Error(
+      `NLU_PARSE_ERROR: confidence too low (${intent.confidence}). missing=${(intent.missingFields ?? []).join(",")}`,
+    );
+  }
+  if ((intent.missingFields?.length ?? 0) > 0) {
+    throw new Error(`NLU_PARSE_ERROR: missing required fields: ${intent.missingFields?.join(",")}`);
   }
 }
 

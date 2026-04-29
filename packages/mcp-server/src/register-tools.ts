@@ -515,10 +515,96 @@ function toToolResult(payload: Record<string, unknown>): {
   };
 }
 
-function toToolError(error: unknown): { isError: true; content: [{ type: "text"; text: string }] } {
+function toToolError(error: unknown): {
+  isError: true;
+  content: [{ type: "text"; text: string }];
+  structuredContent: {
+    error_code: string;
+    message: string;
+    missing_fields?: string[];
+  };
+} {
   const message = error instanceof Error ? error.message : String(error);
+  const parsed = parseErrorShape(message);
   return {
     isError: true,
     content: [{ type: "text", text: message }],
+    structuredContent: parsed,
   };
+}
+
+function parseErrorShape(message: string): {
+  error_code: string;
+  message: string;
+  missing_fields?: string[];
+} {
+  const missingFields = extractMissingFields(message);
+  if (missingFields.length > 0) {
+    return {
+      error_code: "MISSING_REQUIRED_FIELDS",
+      message,
+      missing_fields: missingFields,
+    };
+  }
+
+  if (message.includes("PATH_OUTSIDE_WORKSPACE")) {
+    return {
+      error_code: "PATH_POLICY_ERROR",
+      message,
+    };
+  }
+
+  if (message.includes("NLU_PARSE_ERROR")) {
+    return {
+      error_code: "NLU_PARSE_ERROR",
+      message,
+    };
+  }
+
+  if (message.includes("IMAGE_RETRIEVE_ERROR")) {
+    return {
+      error_code: "IMAGE_RETRIEVE_ERROR",
+      message,
+    };
+  }
+
+  return {
+    error_code: "TOOL_EXECUTION_ERROR",
+    message,
+  };
+}
+
+function extractMissingFields(message: string): string[] {
+  const fields = new Set<string>();
+
+  const missingListMatch = message.match(/missing required fields:\s*([a-zA-Z0-9_,\-\s.]+)/i);
+  if (missingListMatch?.[1]) {
+    for (const raw of missingListMatch[1].split(",")) {
+      const normalized = raw.trim();
+      if (normalized.length > 0) {
+        fields.add(normalized);
+      }
+    }
+  }
+
+  const simpleRequiredMatches = message.matchAll(/([a-zA-Z0-9_.-]+)\s+(?:is required|requires)/gi);
+  for (const match of simpleRequiredMatches) {
+    const name = match[1]?.trim();
+    if (name) {
+      fields.add(name);
+    }
+  }
+
+  const providerKeyMap: Array<{ pattern: RegExp; field: string }> = [
+    { pattern: /unsplashApiKey|UNSPLASH_ACCESS_KEY/, field: "unsplash_api_key" },
+    { pattern: /pexelsApiKey|PEXELS_API_KEY/, field: "pexels_api_key" },
+    { pattern: /pixabayApiKey|PIXABAY_API_KEY/, field: "pixabay_api_key" },
+  ];
+  for (const entry of providerKeyMap) {
+    if (entry.pattern.test(message)) {
+      fields.add(entry.field);
+    }
+  }
+
+  return [...fields];
 }

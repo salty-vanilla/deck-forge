@@ -71,6 +71,8 @@ describe("registerTools", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toContain("unsplashApiKey or UNSPLASH_ACCESS_KEY");
+    expect(result.structuredContent?.error_code).toBe("MISSING_REQUIRED_FIELDS");
+    expect(result.structuredContent?.missing_fields).toContain("unsplash_api_key");
   });
 });
 

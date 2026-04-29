@@ -13,6 +13,11 @@ export { generateImageHandler } from "#/handlers/generate-image-handler.js";
 export { generateSlideSpecsHandler } from "#/handlers/generate-slide-specs-handler.js";
 export { inspectPresentationHandler } from "#/handlers/inspect-presentation-handler.js";
 export { listComponentsHandler } from "#/handlers/list-components-handler.js";
+export {
+  getIntentParser,
+  parseRequestHandler,
+  setIntentParser,
+} from "#/handlers/parse-request-handler.js";
 export { searchAssetsHandler } from "#/handlers/search-assets-handler.js";
 export { updateChartDataHandler } from "#/handlers/update-chart-data-handler.js";
 export { validatePresentationHandler } from "#/handlers/validate-presentation-handler.js";
@@ -45,8 +50,12 @@ export type {
   InspectPresentationOutput,
   ListComponentsInput,
   ListComponentsOutput,
+  IntentParser,
   SearchAssetsInput,
   SearchAssetsOutput,
+  ParseRequestInput,
+  ParseRequestOutput,
+  StructuredIntent,
   ToolDefinition,
   UpdateChartDataInput,
   UpdateChartDataOutput,
