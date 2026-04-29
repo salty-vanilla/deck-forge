@@ -2,10 +2,11 @@
   "name": "@deck-forge/tools",
   "version": "0.1.0",
   "type": "module",
-  "repository": "https://github.com/deck-forge/deck-forge.git",
+  "repository": "https://github.com/salty-vanilla/deck-forge.git",
   "files": ["dist", "!dist/**/__tests__/**", "!dist/**/*.test.*", "!dist/tsconfig.tsbuildinfo"],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
