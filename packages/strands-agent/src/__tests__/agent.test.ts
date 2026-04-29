@@ -133,5 +133,20 @@ describe("StrandsPresentationAgent", () => {
 
     expect(result.finalStatus).toBe("success");
     expect(result.revision?.policy).toBe("validation_only");
+    expect(Array.isArray(result.revision?.trace)).toBe(true);
+  });
+
+  it("fails fast when ai_review policy is configured without reviewer/planner", () => {
+    expect(
+      () =>
+        new StrandsPresentationAgent({
+          runtime: {} as never,
+          revisionPolicy: "ai_review",
+          intentParser: {
+            parseCreate: async () => ({ mode: "create", confidence: 0.95 }),
+            parseModify: async () => ({ mode: "modify", confidence: 0.95 }),
+          },
+        }),
+    ).toThrow("REVIEWER_ERROR");
   });
 });

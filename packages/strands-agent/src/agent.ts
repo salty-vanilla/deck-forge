@@ -100,6 +100,17 @@ type RevisionSummary = {
   policy: "none" | "validation_only" | "ai_review";
   loopsExecuted: number;
   operationsApplied: number;
+  trace: RevisionTraceEntry[];
+};
+
+type RevisionTraceEntry = {
+  loopIndex: number;
+  issueCount: number;
+  operationCount: number;
+  operationHash?: string;
+  validationStatus: ValidationReport["status"];
+  validationErrorCount: number;
+  stopReason?: string;
 };
 
 export type StrandsRunResult = {
@@ -127,6 +138,14 @@ type PresentationPolicy = {
 
 export class StrandsPresentationAgent {
   constructor(private readonly options: StrandsPresentationAgentOptions) {
+    if (
+      options.revisionPolicy === "ai_review" &&
+      (!options.reviewer || !options.operationPlanner)
+    ) {
+      throw new Error(
+        "REVIEWER_ERROR: ai_review policy requires both reviewer and operationPlanner.",
+      );
+    }
     setPresentationReviewer(options.reviewer);
     setPresentationOperationPlanner(options.operationPlanner);
   }
@@ -342,6 +361,7 @@ export class StrandsPresentationAgent {
     let presentation = input.presentation;
     let operationsApplied = 0;
     let loopsExecuted = 0;
+    const revisionTrace: RevisionTraceEntry[] = [];
 
     let { report } = await this.runStep("validate", input.trace, async () =>
       validatePresentationHandler({
@@ -350,14 +370,14 @@ export class StrandsPresentationAgent {
       }),
     );
 
-    while (loopsExecuted < input.maxRevisionLoops) {
-      if (report.status !== "failed") {
-        break;
-      }
-
-      loopsExecuted += 1;
-
-      if (input.shouldAutoFix) {
+    if (input.revisionPolicy === "validation_only") {
+      while (
+        loopsExecuted < input.maxRevisionLoops &&
+        report.status === "failed" &&
+        input.shouldAutoFix
+      ) {
+        loopsExecuted += 1;
+        const prevErrorCount = report.summary.errorCount;
         presentation = await this.runStep("auto_fix", input.trace, async () =>
           autoFixPresentation(presentation, report),
         );
@@ -367,53 +387,109 @@ export class StrandsPresentationAgent {
             level: input.validationLevel,
           }),
         ));
-        if (report.status !== "failed") {
+        const improved = report.summary.errorCount < prevErrorCount;
+        revisionTrace.push({
+          loopIndex: loopsExecuted,
+          issueCount: report.issues.length,
+          operationCount: 0,
+          validationStatus: report.status,
+          validationErrorCount: report.summary.errorCount,
+          stopReason: improved ? undefined : "no_validation_improvement",
+        });
+        if (!improved) {
           break;
         }
       }
+    }
 
-      if (input.revisionPolicy !== "ai_review") {
-        break;
+    if (input.revisionPolicy === "ai_review") {
+      while (loopsExecuted < input.maxRevisionLoops && report.status === "failed") {
+        loopsExecuted += 1;
+        const prevErrorCount = report.summary.errorCount;
+        const reviewOutput = await this.runStep("review", input.trace, async () =>
+          reviewPresentationHandler({
+            presentation,
+            report,
+            goal: input.payload.goal,
+          }),
+        );
+        const issues = reviewOutput.issues;
+        if (issues.length === 0) {
+          revisionTrace.push({
+            loopIndex: loopsExecuted,
+            issueCount: 0,
+            operationCount: 0,
+            validationStatus: report.status,
+            validationErrorCount: report.summary.errorCount,
+            stopReason: "no_review_issues",
+          });
+          break;
+        }
+
+        const planOutput = await this.runStep("plan_operations", input.trace, async () =>
+          planPresentationOperationsHandler({
+            presentation,
+            issues,
+            goal: input.payload.goal,
+          }),
+        );
+        const operations = planOutput.operations as PresentationOperation[];
+        if (operations.length === 0) {
+          revisionTrace.push({
+            loopIndex: loopsExecuted,
+            issueCount: issues.length,
+            operationCount: 0,
+            validationStatus: report.status,
+            validationErrorCount: report.summary.errorCount,
+            stopReason: "no_planned_operations",
+          });
+          break;
+        }
+
+        ({ presentation } = await this.runStep("apply_operations", input.trace, async () =>
+          applyPresentationOperationsHandler({
+            presentation,
+            operations,
+          }),
+        ));
+        operationsApplied += operations.length;
+
+        ({ report } = await this.runStep("revalidate", input.trace, async () =>
+          validatePresentationHandler({
+            presentation,
+            level: input.validationLevel,
+          }),
+        ));
+        const improved =
+          report.summary.errorCount < prevErrorCount || report.issues.length < issues.length;
+        revisionTrace.push({
+          loopIndex: loopsExecuted,
+          issueCount: issues.length,
+          operationCount: operations.length,
+          operationHash: stableHashFromOperations(operations),
+          validationStatus: report.status,
+          validationErrorCount: report.summary.errorCount,
+          stopReason: improved ? undefined : "no_issue_or_validation_improvement",
+        });
+        if (!improved) {
+          break;
+        }
       }
+    }
 
-      const reviewOutput = await this.runStep("review", input.trace, async () =>
-        reviewPresentationHandler({
-          presentation,
-          report,
-          goal: input.payload.goal,
-        }),
-      );
-      const issues = reviewOutput.issues;
-      if (issues.length === 0) {
-        break;
-      }
-
-      const planOutput = await this.runStep("plan_operations", input.trace, async () =>
-        planPresentationOperationsHandler({
-          presentation,
-          issues,
-          goal: input.payload.goal,
-        }),
-      );
-      const operations = planOutput.operations as PresentationOperation[];
-      if (operations.length === 0) {
-        break;
-      }
-
-      ({ presentation } = await this.runStep("apply_operations", input.trace, async () =>
-        applyPresentationOperationsHandler({
-          presentation,
-          operations,
-        }),
-      ));
-      operationsApplied += operations.length;
-
-      ({ report } = await this.runStep("revalidate", input.trace, async () =>
-        validatePresentationHandler({
-          presentation,
-          level: input.validationLevel,
-        }),
-      ));
+    if (
+      report.status !== "passed" &&
+      input.revisionPolicy !== "none" &&
+      loopsExecuted >= input.maxRevisionLoops &&
+      input.maxRevisionLoops > 0
+    ) {
+      input.trace.push({
+        step: "revalidate",
+        status: "success",
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        details: "WARNING: max revision loops reached before full pass.",
+      });
     }
 
     return {
@@ -423,6 +499,7 @@ export class StrandsPresentationAgent {
         policy: input.revisionPolicy,
         loopsExecuted,
         operationsApplied,
+        trace: revisionTrace,
       },
     };
   }
@@ -622,4 +699,25 @@ function classifyError(message: string): RunnerErrorCategory {
     return "export_error";
   }
   return "pipeline_error";
+}
+
+function stableHashFromOperations(operations: PresentationOperation[]): string {
+  const serialized = stableStringify(operations);
+  let hash = 0;
+  for (let i = 0; i < serialized.length; i += 1) {
+    hash = (hash * 31 + serialized.charCodeAt(i)) | 0;
+  }
+  return `op_${Math.abs(hash).toString(16)}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(",")}}`;
 }
