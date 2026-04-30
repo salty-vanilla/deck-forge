@@ -1,0 +1,33 @@
+{
+  "id": "comparison",
+  "version": "1.0.0",
+  "capability": "comparison",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "left": {
+        "type": "object",
+        "properties": {
+          "heading": { "type": "string" },
+          "points": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["heading"]
+      },
+      "right": {
+        "type": "object",
+        "properties": {
+          "heading": { "type": "string" },
+          "points": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["heading"]
+      }
+    },
+    "required": ["title", "left", "right"]
+  },
+  "slotSchema": ["title", "left", "right"],
+  "layoutContract": {
+    "variant": "comparison",
+    "regionRoles": ["title", "body", "body"]
+  }
+}

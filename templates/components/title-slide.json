@@ -1,0 +1,21 @@
+{
+  "id": "title-slide",
+  "version": "1.0.0",
+  "capability": "title_slide",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "subtitle": { "type": "string" },
+      "presenter": { "type": "string" },
+      "date": { "type": "string" },
+      "organization": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "subtitle", "footer"],
+  "layoutContract": {
+    "variant": "title",
+    "regionRoles": ["title", "subtitle", "footer"]
+  }
+}

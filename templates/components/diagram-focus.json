@@ -1,0 +1,27 @@
+{
+  "id": "diagram-focus",
+  "version": "1.0.0",
+  "capability": "diagram_focus",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "diagram": {
+        "type": "object",
+        "properties": {
+          "diagramType": { "type": "string" },
+          "nodes": { "type": "array" },
+          "edges": { "type": "array" }
+        },
+        "required": ["diagramType"]
+      },
+      "caption": { "type": "string" }
+    },
+    "required": ["title", "diagram"]
+  },
+  "slotSchema": ["title", "diagram", "caption"],
+  "layoutContract": {
+    "variant": "diagram_focus",
+    "regionRoles": ["title", "visual", "caption"]
+  }
+}

@@ -1,5 +1,77 @@
 # @deck-forge/core
 
+## 0.3.1
+
+### Minor Changes
+
+The 0.3.1 release expands the component template catalog and the layout
+strategy registry so the IR builder produces structurally appropriate
+layouts for the canonical "kinds of slide" found in real decks (title,
+section divider, agenda, comparison, dashboard, matrix, timeline, closing,
+etc.). All changes are additive.
+
+#### Component templates (`templates/components/*.json`)
+
+19 new templates with `ContentBlock`-aware `propsSchema`:
+
+- **Canonical slide kinds**: `title-slide`, `section-divider`, `agenda`,
+  `closing-cta`, `thank-you`, `qa`, `quote-spotlight`.
+- **Catalog gaps filled**: `chart-focus`, `hero-visual`, `comparison`
+  (previously suggested by `detectCapability` but had no template body).
+- **`LayoutType` parity**: `three-column`, `matrix-2x2`, `dashboard`,
+  `diagram-focus`, `image-left-text-right`, `text-left-image-right`,
+  `timeline-horizontal`, `process-flow`.
+- **`ContentBlock` coverage**: `metric-row`, `callout-spotlight`.
+- `propsSchema` reflects real block structure (e.g. `chart`, `metrics[]`,
+  `events[]`, `quadrants[]`, `quote`, `diagram`) instead of the previous
+  `{title, body}` placeholder.
+
+#### Layout strategies (`packages/core/src/builders/layouts/`)
+
+8 new strategies registered in `BUILTIN_LAYOUT_STRATEGIES` with explicit
+priority tiers (80 = explicit slide-kind layouts, 70 = explicit body
+LayoutTypes, 60–30 = content-driven, 0 = single-stack fallback):
+
+- `titleSlideStrategy` (80) — `LayoutSpec.type === "title"`, centers all
+  blocks with `alignment: center`.
+- `sectionDividerStrategy` (80) — `LayoutSpec.type === "section"`,
+  left-aligned with accent bar decoration.
+- `comparisonStrategy` (70) — handles `comparison` /
+  `image_left_text_right` / `text_left_image_right`; image side is
+  dictated by the LayoutType, plain `comparison` splits blocks evenly.
+- `threeColumnStrategy` (70) — three equal columns, round-robin block
+  distribution.
+- `matrixStrategy` (70) — 2×2 grid via `splitGrid`, card decoration.
+- `dashboardStrategy` (70) — KPI grid in upper region + chart/table/text
+  stacked below.
+- `timelineStrategy` (70) — horizontal event lay-out via `splitHorizontal`.
+- `diagramFocusStrategy` (70) — dominant diagram/image with caption stack
+  below.
+
+#### Capability detection (`component-catalog.ts`)
+
+`detectCapability` rewritten with a 4-tier resolution order:
+
+1. `SlideIntent.type` — `title`/`agenda`/`closing`/`comparison`/`timeline`/
+   `process` map to dedicated capabilities regardless of content blocks.
+2. `LayoutSpec.type` — explicit layout type wins over inferred content
+   signals (covers all 15 `LayoutType` enum values).
+3. `ContentBlock` heuristics — `quote` → `quote_spotlight`, `chart` +
+   metrics → `dashboard`, `chart` alone → `chart_focus`, `diagram` →
+   `diagram_focus`, ≥2 metrics → `metric_row`, `table` → `kpi_grid`,
+   `image` → `hero_visual`, single `callout` → `callout_spotlight`.
+4. Fallback: `two_column`.
+
+`suggestComponentId` extended to map all 21 capabilities to template ids.
+
+#### Tests
+
+- `__tests__/layout-strategies.test.ts`: +11 tests covering the 8 new
+  strategies (match priority, frame production, decoration hints).
+- `__tests__/component-catalog.test.ts`: +10 tests covering the new
+  `detectCapability` resolution against the default catalog.
+- 273 tests total, all passing; `pnpm typecheck` clean.
+
 ## 0.3.0
 
 ### Minor Changes

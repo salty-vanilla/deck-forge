@@ -1,0 +1,29 @@
+{
+  "id": "agenda",
+  "version": "1.0.0",
+  "capability": "agenda",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "description": { "type": "string" },
+            "duration": { "type": "string" }
+          },
+          "required": ["label"]
+        }
+      }
+    },
+    "required": ["title", "items"]
+  },
+  "slotSchema": ["title", "body"],
+  "layoutContract": {
+    "variant": "single_column",
+    "regionRoles": ["title", "body"]
+  }
+}

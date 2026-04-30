@@ -1,0 +1,29 @@
+{
+  "id": "timeline-horizontal",
+  "version": "1.0.0",
+  "capability": "timeline_horizontal",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "events": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "date": { "type": "string" },
+            "description": { "type": "string" }
+          },
+          "required": ["label"]
+        }
+      }
+    },
+    "required": ["title", "events"]
+  },
+  "slotSchema": ["title", "body"],
+  "layoutContract": {
+    "variant": "timeline",
+    "regionRoles": ["title", "body"]
+  }
+}

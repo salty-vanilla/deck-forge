@@ -1,0 +1,27 @@
+{
+  "id": "chart-focus",
+  "version": "1.0.0",
+  "capability": "chart_focus",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "chart": {
+        "type": "object",
+        "properties": {
+          "chartType": { "type": "string" },
+          "data": { "type": "object" }
+        },
+        "required": ["chartType"]
+      },
+      "caption": { "type": "string" },
+      "insight": { "type": "string" }
+    },
+    "required": ["title", "chart"]
+  },
+  "slotSchema": ["title", "chart", "caption"],
+  "layoutContract": {
+    "variant": "single_column",
+    "regionRoles": ["title", "chart", "caption"]
+  }
+}

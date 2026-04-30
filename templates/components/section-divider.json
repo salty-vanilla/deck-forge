@@ -1,0 +1,19 @@
+{
+  "id": "section-divider",
+  "version": "1.0.0",
+  "capability": "section_divider",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "sectionNumber": { "type": "string" },
+      "subtitle": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "subtitle", "caption"],
+  "layoutContract": {
+    "variant": "section",
+    "regionRoles": ["title", "subtitle"]
+  }
+}

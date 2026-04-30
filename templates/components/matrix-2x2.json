@@ -1,0 +1,38 @@
+{
+  "id": "matrix-2x2",
+  "version": "1.0.0",
+  "capability": "matrix",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "axes": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "string" },
+          "y": { "type": "string" }
+        },
+        "required": ["x", "y"]
+      },
+      "quadrants": {
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "items": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["label"]
+        }
+      }
+    },
+    "required": ["title", "quadrants"]
+  },
+  "slotSchema": ["title", "q1", "q2", "q3", "q4"],
+  "layoutContract": {
+    "variant": "matrix",
+    "regionRoles": ["title", "body", "body", "body", "body"]
+  }
+}

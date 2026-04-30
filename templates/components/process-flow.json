@@ -1,0 +1,29 @@
+{
+  "id": "process-flow",
+  "version": "1.0.0",
+  "capability": "process_flow",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "steps": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "description": { "type": "string" }
+          },
+          "required": ["label"]
+        }
+      }
+    },
+    "required": ["title", "steps"]
+  },
+  "slotSchema": ["title", "body"],
+  "layoutContract": {
+    "variant": "timeline",
+    "regionRoles": ["title", "body"]
+  }
+}

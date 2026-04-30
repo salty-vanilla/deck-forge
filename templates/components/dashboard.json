@@ -1,0 +1,36 @@
+{
+  "id": "dashboard",
+  "version": "1.0.0",
+  "capability": "dashboard",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "delta": { "type": "string" }
+          },
+          "required": ["label", "value"]
+        }
+      },
+      "chart": {
+        "type": "object",
+        "properties": {
+          "chartType": { "type": "string" }
+        }
+      },
+      "table": { "type": "object" }
+    },
+    "required": ["title", "metrics"]
+  },
+  "slotSchema": ["title", "metrics", "chart", "table"],
+  "layoutContract": {
+    "variant": "dashboard",
+    "regionRoles": ["title", "body", "chart", "table"]
+  }
+}

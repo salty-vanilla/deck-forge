@@ -1,0 +1,20 @@
+{
+  "id": "quote-spotlight",
+  "version": "1.0.0",
+  "capability": "quote_spotlight",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "quote": { "type": "string" },
+      "attribution": { "type": "string" },
+      "context": { "type": "string" }
+    },
+    "required": ["quote"]
+  },
+  "slotSchema": ["title", "callout", "caption"],
+  "layoutContract": {
+    "variant": "single_column",
+    "regionRoles": ["title", "callout", "caption"]
+  }
+}

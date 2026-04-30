@@ -3,12 +3,19 @@ import { describe, expect, it } from "vitest";
 import { buildPresentationIr } from "#src/builders/build-presentation-ir.js";
 import {
   BUILTIN_LAYOUT_STRATEGIES,
+  comparisonStrategy,
+  dashboardStrategy,
+  diagramFocusStrategy,
   heroStrategy,
   kpiGridStrategy,
+  matrixStrategy,
   selectLayoutStrategy,
   singleStackStrategy,
   splitGrid,
   splitVertical,
+  threeColumnStrategy,
+  timelineStrategy,
+  titleSlideStrategy,
   twoColumnStrategy,
 } from "#src/builders/layouts/index.js";
 import type { LayoutContext } from "#src/builders/layouts/index.js";
@@ -342,5 +349,187 @@ describe("buildPresentationIr — strategy integration", () => {
 
     // Image sits to the right of the body column in the default two-column layout.
     expect(image.frame.x).toBeGreaterThan(body1.frame.x);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 0.3.x: explicit-LayoutType strategies
+// ---------------------------------------------------------------------------
+
+describe("title-slide / section-divider strategies", () => {
+  it("title-slide wins over kpi-grid when layout.type === 'title'", () => {
+    const ctx = makeContext(
+      [
+        { id: "m1", type: "metric", label: "A", value: "1" },
+        { id: "m2", type: "metric", label: "B", value: "2" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "title", density: "low" } },
+    );
+    const strategy = selectLayoutStrategy(ctx);
+    expect(strategy.id).toBe("title-slide");
+  });
+
+  it("title-slide centers all blocks", () => {
+    const ctx = makeContext(
+      [
+        { id: "s1", type: "subtitle", text: "Tagline" },
+        { id: "p1", type: "paragraph", text: "Presenter" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "title", density: "low" } },
+    );
+    const assignments = titleSlideStrategy.layout(ctx);
+    expect(assignments).toHaveLength(2);
+    for (const a of assignments) {
+      expect(a.hints?.alignment).toBe("center");
+    }
+  });
+
+  it("section-divider matches when layout.type === 'section'", () => {
+    const ctx = makeContext([{ id: "s1", type: "subtitle", text: "Part 2" }] as ContentBlock[], {
+      layoutSpec: { type: "section", density: "low" },
+    });
+    const strategy = selectLayoutStrategy(ctx);
+    expect(strategy.id).toBe("section-divider");
+    const assignments = strategy.layout(ctx);
+    expect(assignments[0]?.hints?.decoration).toBe("accent-bar");
+  });
+});
+
+describe("comparison strategy", () => {
+  it("matches comparison / image_left_text_right / text_left_image_right", () => {
+    for (const t of ["comparison", "image_left_text_right", "text_left_image_right"] as const) {
+      const ctx = makeContext(
+        [
+          { id: "p1", type: "paragraph", text: "L" },
+          { id: "p2", type: "paragraph", text: "R" },
+        ] as ContentBlock[],
+        { layoutSpec: { type: t, density: "medium" } },
+      );
+      expect(comparisonStrategy.match(ctx)).toBe(true);
+    }
+  });
+
+  it("splits blocks evenly into left and right columns", () => {
+    const ctx = makeContext(
+      [
+        { id: "a1", type: "paragraph", text: "A1" },
+        { id: "a2", type: "paragraph", text: "A2" },
+        { id: "b1", type: "paragraph", text: "B1" },
+        { id: "b2", type: "paragraph", text: "B2" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "comparison", density: "medium" } },
+    );
+    const assignments = comparisonStrategy.layout(ctx);
+    const a1 = assignments.find((a) => a.blockId === "a1");
+    const b1 = assignments.find((a) => a.blockId === "b1");
+    expect(a1 && b1).toBeTruthy();
+    if (!a1 || !b1) return;
+    expect(a1.frame.x).toBeLessThan(b1.frame.x);
+  });
+
+  it("places image on the dictated side for image_left_text_right", () => {
+    const ctx = makeContext(
+      [
+        { id: "p1", type: "paragraph", text: "Body" },
+        { id: "i1", type: "image", assetId: "asset-1" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "image_left_text_right", density: "medium" } },
+    );
+    const assignments = comparisonStrategy.layout(ctx);
+    const image = assignments.find((a) => a.blockId === "i1");
+    const body = assignments.find((a) => a.blockId === "p1");
+    if (!image || !body) return;
+    expect(image.frame.x).toBeLessThan(body.frame.x);
+  });
+});
+
+describe("three-column strategy", () => {
+  it("matches three_column and distributes blocks across 3 columns", () => {
+    const ctx = makeContext(
+      [
+        { id: "p1", type: "paragraph", text: "1" },
+        { id: "p2", type: "paragraph", text: "2" },
+        { id: "p3", type: "paragraph", text: "3" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "three_column", density: "medium" } },
+    );
+    expect(threeColumnStrategy.match(ctx)).toBe(true);
+    const xs = threeColumnStrategy.layout(ctx).map((a) => a.frame.x);
+    expect(new Set(xs).size).toBe(3);
+  });
+});
+
+describe("matrix-2x2 strategy", () => {
+  it("places 4 blocks in a 2x2 grid with card decoration", () => {
+    const ctx = makeContext(
+      [
+        { id: "q1", type: "paragraph", text: "Q1" },
+        { id: "q2", type: "paragraph", text: "Q2" },
+        { id: "q3", type: "paragraph", text: "Q3" },
+        { id: "q4", type: "paragraph", text: "Q4" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "matrix", density: "medium" } },
+    );
+    const assignments = matrixStrategy.layout(ctx);
+    expect(assignments).toHaveLength(4);
+    expect(new Set(assignments.map((a) => a.frame.x)).size).toBe(2);
+    expect(new Set(assignments.map((a) => a.frame.y)).size).toBe(2);
+    for (const a of assignments) {
+      expect(a.hints?.decoration).toBe("card");
+    }
+  });
+});
+
+describe("dashboard strategy", () => {
+  it("metrics in upper grid, other blocks below", () => {
+    const ctx = makeContext(
+      [
+        { id: "m1", type: "metric", label: "A", value: "1" },
+        { id: "m2", type: "metric", label: "B", value: "2" },
+        { id: "t1", type: "table", headers: ["x"], rows: [["y"]] },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "dashboard", density: "medium" } },
+    );
+    const assignments = dashboardStrategy.layout(ctx);
+    const m1 = assignments.find((a) => a.blockId === "m1");
+    const t1 = assignments.find((a) => a.blockId === "t1");
+    if (!m1 || !t1) return;
+    expect(t1.frame.y).toBeGreaterThan(m1.frame.y);
+    expect(m1.hints?.decoration).toBe("card");
+  });
+});
+
+describe("timeline strategy", () => {
+  it("matches timeline and lays events horizontally", () => {
+    const ctx = makeContext(
+      [
+        { id: "e1", type: "paragraph", text: "Phase 1" },
+        { id: "e2", type: "paragraph", text: "Phase 2" },
+        { id: "e3", type: "paragraph", text: "Phase 3" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "timeline", density: "medium" } },
+    );
+    expect(timelineStrategy.match(ctx)).toBe(true);
+    const assignments = timelineStrategy.layout(ctx);
+    expect(new Set(assignments.map((a) => a.frame.x)).size).toBe(3);
+    expect(new Set(assignments.map((a) => a.frame.y)).size).toBe(1);
+  });
+});
+
+describe("diagram-focus strategy", () => {
+  it("gives diagram the dominant frame and stacks captions below", () => {
+    const ctx = makeContext(
+      [
+        { id: "d1", type: "diagram", diagramType: "flowchart", nodes: [], edges: [] },
+        { id: "p1", type: "paragraph", text: "Caption" },
+      ] as ContentBlock[],
+      { layoutSpec: { type: "diagram_focus", density: "medium" } },
+    );
+    const assignments = diagramFocusStrategy.layout(ctx);
+    const d1 = assignments.find((a) => a.blockId === "d1");
+    const p1 = assignments.find((a) => a.blockId === "p1");
+    if (!d1 || !p1) return;
+    expect(d1.frame.height).toBeGreaterThan(p1.frame.height);
+    expect(p1.frame.y).toBeGreaterThanOrEqual(d1.frame.y + d1.frame.height);
   });
 });

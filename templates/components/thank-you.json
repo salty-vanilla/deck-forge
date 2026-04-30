@@ -1,0 +1,26 @@
+{
+  "id": "thank-you",
+  "version": "1.0.0",
+  "capability": "thank_you",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "subtitle": { "type": "string" },
+      "contact": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "subtitle", "footer"],
+  "layoutContract": {
+    "variant": "title",
+    "regionRoles": ["title", "subtitle", "footer"]
+  }
+}

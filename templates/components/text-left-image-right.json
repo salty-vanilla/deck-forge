@@ -1,0 +1,26 @@
+{
+  "id": "text-left-image-right",
+  "version": "1.0.0",
+  "capability": "text_left_image_right",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "body": { "type": "string" },
+      "image": {
+        "type": "object",
+        "properties": {
+          "assetId": { "type": "string" },
+          "alt": { "type": "string" }
+        },
+        "required": ["assetId"]
+      }
+    },
+    "required": ["title", "image"]
+  },
+  "slotSchema": ["title", "body", "visual"],
+  "layoutContract": {
+    "variant": "text_left_image_right",
+    "regionRoles": ["title", "body", "visual"]
+  }
+}

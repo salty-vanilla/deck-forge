@@ -1,6 +1,6 @@
 {
   "name": "@deck-forge/tools",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "repository": "https://github.com/salty-vanilla/deck-forge.git",
   "files": ["dist", "!dist/**/__tests__/**", "!dist/**/*.test.*", "!dist/tsconfig.tsbuildinfo"],

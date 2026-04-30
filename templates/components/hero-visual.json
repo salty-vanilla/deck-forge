@@ -1,0 +1,26 @@
+{
+  "id": "hero-visual",
+  "version": "1.0.0",
+  "capability": "hero_visual",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "image": {
+        "type": "object",
+        "properties": {
+          "assetId": { "type": "string" },
+          "alt": { "type": "string" }
+        },
+        "required": ["assetId"]
+      },
+      "caption": { "type": "string" }
+    },
+    "required": ["image"]
+  },
+  "slotSchema": ["title", "visual", "caption"],
+  "layoutContract": {
+    "variant": "hero",
+    "regionRoles": ["title", "visual", "caption"]
+  }
+}

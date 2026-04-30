@@ -1,0 +1,31 @@
+{
+  "id": "metric-row",
+  "version": "1.0.0",
+  "capability": "metric_row",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "metrics": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "delta": { "type": "string" }
+          },
+          "required": ["label", "value"]
+        }
+      },
+      "caption": { "type": "string" }
+    },
+    "required": ["title", "metrics"]
+  },
+  "slotSchema": ["title", "metrics", "caption"],
+  "layoutContract": {
+    "variant": "kpi_grid",
+    "regionRoles": ["title", "body", "caption"]
+  }
+}

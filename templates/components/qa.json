@@ -1,0 +1,18 @@
+{
+  "id": "qa",
+  "version": "1.0.0",
+  "capability": "qa",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "prompt": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "slotSchema": ["title", "subtitle"],
+  "layoutContract": {
+    "variant": "title",
+    "regionRoles": ["title", "subtitle"]
+  }
+}

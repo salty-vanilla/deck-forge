@@ -1,0 +1,22 @@
+{
+  "id": "closing-cta",
+  "version": "1.0.0",
+  "capability": "closing_cta",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "callout": { "type": "string" },
+      "actions": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["title", "callout"]
+  },
+  "slotSchema": ["title", "callout", "body"],
+  "layoutContract": {
+    "variant": "single_column",
+    "regionRoles": ["title", "callout", "body"]
+  }
+}

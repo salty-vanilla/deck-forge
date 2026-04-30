@@ -1,0 +1,29 @@
+{
+  "id": "callout-spotlight",
+  "version": "1.0.0",
+  "capability": "callout_spotlight",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "callout": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" },
+          "tone": {
+            "type": "string",
+            "enum": ["info", "success", "warning", "danger", "neutral"]
+          }
+        },
+        "required": ["text"]
+      },
+      "supporting": { "type": "string" }
+    },
+    "required": ["title", "callout"]
+  },
+  "slotSchema": ["title", "callout", "body"],
+  "layoutContract": {
+    "variant": "single_column",
+    "regionRoles": ["title", "callout", "body"]
+  }
+}

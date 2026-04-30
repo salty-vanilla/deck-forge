@@ -1,0 +1,30 @@
+{
+  "id": "three-column",
+  "version": "1.0.0",
+  "capability": "three_column",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "columns": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+          "type": "object",
+          "properties": {
+            "heading": { "type": "string" },
+            "body": { "type": "string" }
+          },
+          "required": ["heading"]
+        }
+      }
+    },
+    "required": ["title", "columns"]
+  },
+  "slotSchema": ["title", "left", "center", "right"],
+  "layoutContract": {
+    "variant": "three_column",
+    "regionRoles": ["title", "body", "body", "body"]
+  }
+}
