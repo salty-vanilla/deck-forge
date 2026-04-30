@@ -1,9 +1,9 @@
-import type { PresentationIR, ValidationIssue } from "#/index.js";
+import type { PresentationIR, ValidationIssue } from "#src/index.js";
 import {
   suggestApplyThemeToken,
   suggestReduceFontSize,
-} from "#/validation/autofix/auto-fix-presentation.js";
-import type { IssueFactory } from "#/validation/types.js";
+} from "#src/validation/autofix/auto-fix-presentation.js";
+import type { IssueFactory } from "#src/validation/types.js";
 
 const MIN_FONT_SIZE = 12;
 

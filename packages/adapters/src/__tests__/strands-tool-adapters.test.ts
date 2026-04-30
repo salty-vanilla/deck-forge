@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import * as rootAdapters from "#/index.js";
-import { createPresentationTools } from "#/strands/index.js";
+import * as rootAdapters from "#src/index.js";
+import { createPresentationTools } from "#src/strands/index.js";
 
 describe("createPresentationTools", () => {
   it("does not export Strands-specific APIs from the adapters root", () => {
@@ -12,7 +12,7 @@ describe("createPresentationTools", () => {
   it("returns Strands-compatible tools", () => {
     const tools = createPresentationTools();
 
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(21);
   });
 
   it("each tool has name, description and handler", () => {
@@ -34,7 +34,9 @@ describe("createPresentationTools", () => {
       "presentation_update_chart_data",
       "presentation_inspect",
       "presentation_validate",
+      "presentation_build_review_packet",
       "presentation_export",
+      "presentation_export_slide_images",
       "presentation_generate_image",
       "presentation_search_assets",
       "presentation_attach_retrieved_asset",

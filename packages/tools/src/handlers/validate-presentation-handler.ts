@@ -1,6 +1,6 @@
 import { validatePresentation } from "@deck-forge/core";
 
-import type { ValidatePresentationInput, ValidatePresentationOutput } from "#/types.js";
+import type { ValidatePresentationInput, ValidatePresentationOutput } from "#src/types.js";
 
 export async function validatePresentationHandler(
   input: ValidatePresentationInput,

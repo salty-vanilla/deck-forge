@@ -1,6 +1,6 @@
 import { synthesizeComponents } from "@deck-forge/core";
 
-import type { ComponentSynthesizeInput, ComponentSynthesizeOutput } from "#/types.js";
+import type { ComponentSynthesizeInput, ComponentSynthesizeOutput } from "#src/types.js";
 
 export async function componentSynthesizeHandler(
   input: ComponentSynthesizeInput,

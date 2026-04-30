@@ -4,12 +4,17 @@ import type {
   Exporter,
   PresentationIR,
   ValidationReport,
-} from "#/index.js";
-import type { ImageGenerator } from "#/index.js";
-import type { InspectQuery, InspectResult } from "#/inspect/types.js";
-import type { PresentationOperation } from "#/operations/types.js";
-import type { RuntimeSafetyOptions } from "#/runtime/path-policy.js";
-import type { ValidateOptions } from "#/validation/types.js";
+} from "#src/index.js";
+import type { ImageGenerator } from "#src/index.js";
+import type { InspectQuery, InspectResult } from "#src/inspect/types.js";
+import type { PresentationOperation } from "#src/operations/types.js";
+import type {
+  BuildReviewPacketOptions,
+  PresentationReviewPacket,
+  SlideImageRenderer,
+} from "#src/review/types.js";
+import type { RuntimeSafetyOptions } from "#src/runtime/path-policy.js";
+import type { ValidateOptions } from "#src/validation/types.js";
 
 export type CreatePresentationInput = {
   id?: string;
@@ -32,6 +37,10 @@ export interface PresentationRuntime {
   inspect(presentation: PresentationIR, query: InspectQuery): Promise<InspectResult>;
   validate(presentation: PresentationIR, options?: ValidateOptions): Promise<ValidationReport>;
   export(presentation: PresentationIR, options: ExportOptions): Promise<ExportResult>;
+  buildReviewPacket?(
+    presentation: PresentationIR,
+    options: RuntimeReviewPacketOptions,
+  ): Promise<PresentationReviewPacket>;
 }
 
 export type PresentationValidator = (
@@ -42,7 +51,18 @@ export type PresentationValidator = (
 export type LocalPresentationRuntimeOptions = {
   exporters: Exporter[];
   imageGenerators?: ImageGenerator[];
+  slideImageRenderer?: SlideImageRenderer;
   validator?: PresentationValidator;
   safety?: RuntimeSafetyOptions;
   layoutResolver?: unknown;
 };
+
+export type RuntimeReviewPacketOptions = Omit<
+  BuildReviewPacketOptions,
+  "presentation" | "renderer"
+>;
+
+export type PresentationReviewPacketBuilder = (
+  presentation: PresentationIR,
+  options: RuntimeReviewPacketOptions,
+) => Promise<PresentationReviewPacket>;

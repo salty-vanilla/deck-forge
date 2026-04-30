@@ -1,6 +1,6 @@
-import type { ImageElementIR, PresentationIR } from "#/index.js";
-import type { AddImageOperation } from "#/operations/types.js";
-import { collectElementIds, findSlide, generateId, getTargetFrame } from "#/operations/utils.js";
+import type { ImageElementIR, PresentationIR } from "#src/index.js";
+import type { AddImageOperation } from "#src/operations/types.js";
+import { collectElementIds, findSlide, generateId, getTargetFrame } from "#src/operations/utils.js";
 
 export function addImage(presentation: PresentationIR, operation: AddImageOperation): void {
   const slide = findSlide(presentation, operation.slideId);

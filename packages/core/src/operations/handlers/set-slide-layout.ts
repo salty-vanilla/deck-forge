@@ -1,6 +1,6 @@
-import type { PresentationIR } from "#/index.js";
-import type { SetSlideLayoutOperation } from "#/operations/types.js";
-import { createResolvedRegions, findSlide } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import type { SetSlideLayoutOperation } from "#src/operations/types.js";
+import { createResolvedRegions, findSlide } from "#src/operations/utils.js";
 
 export function setSlideLayout(
   presentation: PresentationIR,

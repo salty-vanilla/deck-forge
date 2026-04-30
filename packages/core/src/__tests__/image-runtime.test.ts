@@ -4,19 +4,19 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
 import {
   generateImageFromAssetSpec,
   materializeGeneratedAssets,
   retrieveImageFromAssetSpec,
   searchImageCandidates,
-} from "#/assets/image-runtime.js";
+} from "#src/assets/image-runtime.js";
 import type {
   GeneratedImageAssetSpec,
   ImageRetriever,
   PresentationIR,
   RetrievedImageAssetSpec,
-} from "#/index.js";
+} from "#src/index.js";
 
 describe("image runtime", () => {
   it("generates an image asset from spec with materialized file path", async () => {

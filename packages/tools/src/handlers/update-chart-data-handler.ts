@@ -1,6 +1,6 @@
 import { applyOperations } from "@deck-forge/core";
 
-import type { UpdateChartDataInput, UpdateChartDataOutput } from "#/types.js";
+import type { UpdateChartDataInput, UpdateChartDataOutput } from "#src/types.js";
 
 export async function updateChartDataHandler(
   input: UpdateChartDataInput,

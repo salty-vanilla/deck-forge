@@ -1,6 +1,6 @@
 import { preflightComponents } from "@deck-forge/core";
 
-import type { ComponentPreflightInput, ComponentPreflightOutput } from "#/types.js";
+import type { ComponentPreflightInput, ComponentPreflightOutput } from "#src/types.js";
 
 export async function componentPreflightHandler(
   input: ComponentPreflightInput,

@@ -1,8 +1,13 @@
 {
   "name": "@deck-forge/adapters",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.0",
   "type": "module",
+  "repository": "https://github.com/salty-vanilla/deck-forge.git",
+  "files": ["dist", "!dist/**/__tests__/**", "!dist/**/*.test.*", "!dist/tsconfig.tsbuildinfo"],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,9 +21,10 @@
     }
   },
   "imports": {
-    "#/*": "./dist/*"
+    "#src/*": "./dist/*"
   },
   "scripts": {
+    "build": "tsc -b",
     "typecheck": "tsc -b"
   },
   "dependencies": {

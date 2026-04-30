@@ -1,24 +1,27 @@
 import path from "node:path";
 
-import { LocalFileImageGenerator, materializeGeneratedAssets } from "#/assets/image-runtime.js";
-import { HtmlExporter } from "#/exporters/html/html-exporter.js";
-import { JsonExporter } from "#/exporters/json/json-exporter.js";
-import { PdfExporter } from "#/exporters/pdf/pdf-exporter.js";
-import { PptxExporter } from "#/exporters/pptx/pptx-exporter.js";
-import type { ExportOptions, ExportResult, PresentationIR, ValidationReport } from "#/index.js";
-import { inspectPresentation } from "#/inspect/inspect-presentation.js";
-import type { InspectQuery, InspectResult } from "#/inspect/types.js";
-import { applyOperations } from "#/operations/apply-operations.js";
-import type { PresentationOperation } from "#/operations/types.js";
-import { assertPathAllowed, resolveSafetyOptions } from "#/runtime/path-policy.js";
+import { LocalFileImageGenerator, materializeGeneratedAssets } from "#src/assets/image-runtime.js";
+import { HtmlExporter } from "#src/exporters/html/html-exporter.js";
+import { JsonExporter } from "#src/exporters/json/json-exporter.js";
+import { PdfExporter } from "#src/exporters/pdf/pdf-exporter.js";
+import { PptxExporter } from "#src/exporters/pptx/pptx-exporter.js";
+import type { ExportOptions, ExportResult, PresentationIR, ValidationReport } from "#src/index.js";
+import { inspectPresentation } from "#src/inspect/inspect-presentation.js";
+import type { InspectQuery, InspectResult } from "#src/inspect/types.js";
+import { applyOperations } from "#src/operations/apply-operations.js";
+import type { PresentationOperation } from "#src/operations/types.js";
+import { buildReviewPacket } from "#src/review/build-review-packet.js";
+import type { PresentationReviewPacket } from "#src/review/types.js";
+import { assertPathAllowed, resolveSafetyOptions } from "#src/runtime/path-policy.js";
 import type {
   CreatePresentationInput,
   LocalPresentationRuntimeOptions,
   PresentationRuntime,
   PresentationValidator,
-} from "#/runtime/types.js";
-import type { ValidateOptions } from "#/validation/types.js";
-import { validatePresentation } from "#/validation/validate-presentation.js";
+  RuntimeReviewPacketOptions,
+} from "#src/runtime/types.js";
+import type { ValidateOptions } from "#src/validation/types.js";
+import { validatePresentation } from "#src/validation/validate-presentation.js";
 
 export class LocalPresentationRuntime implements PresentationRuntime {
   private readonly exportersByFormat: Map<
@@ -28,6 +31,7 @@ export class LocalPresentationRuntime implements PresentationRuntime {
 
   private readonly validator: PresentationValidator;
   private readonly imageGenerators: NonNullable<LocalPresentationRuntimeOptions["imageGenerators"]>;
+  private readonly slideImageRenderer: LocalPresentationRuntimeOptions["slideImageRenderer"];
   private readonly safety: Required<NonNullable<LocalPresentationRuntimeOptions["safety"]>>;
 
   public constructor(options: LocalPresentationRuntimeOptions) {
@@ -36,6 +40,7 @@ export class LocalPresentationRuntime implements PresentationRuntime {
     );
     this.validator = options.validator ?? validatePresentation;
     this.imageGenerators = options.imageGenerators ?? [new LocalFileImageGenerator()];
+    this.slideImageRenderer = options.slideImageRenderer;
     this.safety = resolveSafetyOptions(options.safety);
   }
 
@@ -101,6 +106,17 @@ export class LocalPresentationRuntime implements PresentationRuntime {
     });
 
     return exporter.export(materialized, options);
+  }
+
+  public async buildReviewPacket(
+    presentation: PresentationIR,
+    options: RuntimeReviewPacketOptions,
+  ): Promise<PresentationReviewPacket> {
+    return buildReviewPacket({
+      ...options,
+      presentation,
+      renderer: this.slideImageRenderer,
+    });
   }
 }
 

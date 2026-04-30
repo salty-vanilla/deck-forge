@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 
 import type { GeneratedImageAssetSpec, PresentationIR } from "@deck-forge/core";
-import { generateImageHandler } from "#/handlers/generate-image-handler.js";
+import { generateImageHandler } from "#src/handlers/generate-image-handler.js";
 
 describe("generateImageHandler", () => {
   const assetSpec: GeneratedImageAssetSpec = {

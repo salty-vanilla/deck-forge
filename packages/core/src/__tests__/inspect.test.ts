@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { inspectPresentation } from "#/inspect/inspect-presentation.js";
-import { resolveAnchor } from "#/inspect/resolve-anchor.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { inspectPresentation } from "#src/inspect/inspect-presentation.js";
+import { resolveAnchor } from "#src/inspect/resolve-anchor.js";
 
 describe("inspectPresentation", () => {
   it("returns filtered text and element data by slideId", async () => {

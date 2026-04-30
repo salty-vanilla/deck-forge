@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import type { ExportResult, PresentationIR } from "#/index.js";
+import type { ExportResult, PresentationIR } from "#src/index.js";
 
 export function serializePresentation(presentation: PresentationIR): string {
   return JSON.stringify(presentation, null, 2);

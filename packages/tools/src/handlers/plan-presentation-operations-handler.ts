@@ -2,7 +2,7 @@ import type {
   PlanPresentationOperationsInput,
   PlanPresentationOperationsOutput,
   PresentationOperationPlanner,
-} from "#/types.js";
+} from "#src/types.js";
 
 let operationPlanner: PresentationOperationPlanner | undefined;
 

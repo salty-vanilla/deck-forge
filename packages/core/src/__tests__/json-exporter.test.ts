@@ -4,14 +4,14 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { JsonExporter } from "#/exporters/json/json-exporter.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { JsonExporter } from "#src/exporters/json/json-exporter.js";
 import {
   deserializePresentation,
   loadPresentationFromFile,
   savePresentationToFile,
   serializePresentation,
-} from "#/json.js";
+} from "#src/json.js";
 
 describe("json exporter", () => {
   it("roundtrips a presentation through JSON string serialization", () => {

@@ -5,7 +5,7 @@ import type {
   ResolvedLayout,
   SlideIR,
   ValidationReport,
-} from "#/index.js";
+} from "#src/index.js";
 
 export type InspectQuery = {
   include?: Array<"deck" | "slides" | "elements" | "text" | "layout" | "assets" | "validation">;

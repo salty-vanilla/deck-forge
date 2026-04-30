@@ -3,10 +3,12 @@ import {
   applyPresentationOperationsHandler,
   attachRetrievedAssetHandler,
   buildPresentationIrHandler,
+  buildReviewPacketHandler,
   componentPreflightHandler,
   componentSynthesizeHandler,
   createPresentationSpecHandler,
   exportPresentationHandler,
+  exportSlideImagesHandler,
   generateAssetPlanHandler,
   generateDeckPlanHandler,
   generateImageHandler,
@@ -33,7 +35,8 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
   server.registerTool(
     "presentation_create_spec",
     {
-      description: "Create a presentation brief from a user request.",
+      description:
+        "Create a scaffold presentation brief from a user request. For production decks, an Agent should provide grounded createArtifacts.",
       inputSchema: {
         userRequest: z.string(),
         audience: z.string().optional(),
@@ -63,7 +66,8 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
   server.registerTool(
     "presentation_generate_deck_plan",
     {
-      description: "Generate a deck plan from a presentation brief.",
+      description:
+        "Generate a scaffold deck plan from a presentation brief. This is a helper, not a substitute for Agent planning.",
       inputSchema: {
         brief: anyObject,
       },
@@ -83,7 +87,8 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
   server.registerTool(
     "presentation_generate_slide_specs",
     {
-      description: "Generate slide specs from brief and deck plan.",
+      description:
+        "Generate scaffold slide specs from brief and deck plan. For production decks, prefer Agent-authored slideSpecs.",
       inputSchema: {
         brief: anyObject,
         deckPlan: anyObject,
@@ -254,14 +259,16 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
         presentation: anyObject,
         report: anyObject.optional(),
         goal: z.string().optional(),
+        packet: anyObject.optional(),
       },
     },
-    async ({ presentation, report, goal }) => {
+    async ({ presentation, report, goal, packet }) => {
       try {
         const output = await reviewPresentationHandler({
           presentation: presentation as never,
           report: report as never,
           goal,
+          packet: packet as never,
         });
         return toToolResult(output);
       } catch (error) {
@@ -383,6 +390,50 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
   );
 
   server.registerTool(
+    "presentation_build_review_packet",
+    {
+      description:
+        "Build a standardized review packet for an Agent/LLM/VLM reviewer, optionally including rendered slide images.",
+      inputSchema: {
+        userRequest: z.string(),
+        presentation: anyObject,
+        validationReport: anyObject.optional(),
+        grounding: anyObject.optional(),
+        renderImages: z.boolean().optional(),
+        slideIds: z.array(z.string()).optional(),
+        imageFormat: z.enum(["png", "jpeg"]).optional(),
+        imageScale: z.number().positive().optional(),
+      },
+    },
+    async ({
+      userRequest,
+      presentation,
+      validationReport,
+      grounding,
+      renderImages,
+      slideIds,
+      imageFormat,
+      imageScale,
+    }) => {
+      try {
+        const output = await buildReviewPacketHandler({
+          userRequest,
+          presentation: presentation as never,
+          validationReport: validationReport as never,
+          grounding: grounding as never,
+          renderImages,
+          slideIds,
+          imageFormat,
+          imageScale,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "presentation_export",
     {
       description: "Export presentation to json/pptx/html/pdf.",
@@ -400,6 +451,46 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
           presentation: presentation as never,
           format,
           outputPath,
+          workspaceRoot: workspaceRoot ?? policy?.workspaceRoot,
+          allowOutsideWorkspace: allowOutsideWorkspace ?? policy?.allowOutsideWorkspace,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "presentation_export_slide_images",
+    {
+      description: "Render presentation slides to PNG/JPEG images for Agent/LLM/VLM review.",
+      inputSchema: {
+        presentation: anyObject,
+        format: z.enum(["png", "jpeg"]).optional(),
+        slideIds: z.array(z.string()).optional(),
+        scale: z.number().positive().optional(),
+        outputDir: z.string().optional(),
+        workspaceRoot: z.string().optional(),
+        allowOutsideWorkspace: z.boolean().optional(),
+      },
+    },
+    async ({
+      presentation,
+      format,
+      slideIds,
+      scale,
+      outputDir,
+      workspaceRoot,
+      allowOutsideWorkspace,
+    }) => {
+      try {
+        const output = await exportSlideImagesHandler({
+          presentation: presentation as never,
+          format,
+          slideIds,
+          scale,
+          outputDir,
           workspaceRoot: workspaceRoot ?? policy?.workspaceRoot,
           allowOutsideWorkspace: allowOutsideWorkspace ?? policy?.allowOutsideWorkspace,
         });

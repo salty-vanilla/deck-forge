@@ -8,8 +8,8 @@ import type {
   SlideIR,
   SlideSize,
   TextStyle,
-} from "#/index.js";
-import type { PresentationOperation } from "#/operations/types.js";
+} from "#src/index.js";
+import type { PresentationOperation } from "#src/operations/types.js";
 
 const DEFAULT_SLIDE_SIZE: SlideSize = {
   width: 1280,

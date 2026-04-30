@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { PresentationIR } from "@deck-forge/core";
-import { attachRetrievedAssetHandler } from "#/handlers/attach-retrieved-asset-handler.js";
-import { searchAssetsHandler } from "#/handlers/search-assets-handler.js";
+import { attachRetrievedAssetHandler } from "#src/handlers/attach-retrieved-asset-handler.js";
+import { searchAssetsHandler } from "#src/handlers/search-assets-handler.js";
 
 describe("retrieval handlers", () => {
   it("returns explicit error when search provider key is missing", async () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { NoopImageGenerator } from "#/assets/generators/noop-image-generator.js";
-import { validateAssets } from "#/validation/rules/asset.js";
-import { validatePresentation } from "#/validation/validate-presentation.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { NoopImageGenerator } from "#src/assets/generators/noop-image-generator.js";
+import { validateAssets } from "#src/validation/rules/asset.js";
+import { validatePresentation } from "#src/validation/validate-presentation.js";
 
 describe("validatePresentation", () => {
   it("passes fixture with no critical issues", async () => {
@@ -74,6 +74,53 @@ describe("validatePresentation", () => {
         issue.message.includes("Strict mode expects at least two slides"),
       ),
     ).toBe(true);
+  });
+
+  it("detects overlapping elements, duplicate titles, large tables, and placeholder assets", async () => {
+    const broken = structuredClone(presentationFixture);
+    const firstSlide = broken.slides[0];
+    const secondSlide = broken.slides[1];
+    if (!firstSlide || !secondSlide) {
+      throw new Error("fixture slides missing");
+    }
+
+    secondSlide.title = firstSlide.title;
+    firstSlide.elements.push({
+      id: "el-overlap",
+      type: "text",
+      role: "body",
+      frame: { ...firstSlide.elements[0].frame },
+      text: { paragraphs: [{ runs: [{ text: "Overlapping text" }] }] },
+      style: { fontSize: 18 },
+    });
+
+    const tableSlide = broken.slides.find((slide) => slide.id === "slide-table");
+    const table = tableSlide?.elements.find((element) => element.type === "table");
+    if (!table || table.type !== "table") {
+      throw new Error("fixture table missing");
+    }
+    table.headers = ["A", "B", "C", "D", "E"];
+    table.rows = Array.from({ length: 9 }, (_, index) => [
+      `A${index}`,
+      `B${index}`,
+      `C${index}`,
+      `D${index}`,
+      `E${index}`,
+    ]);
+
+    const asset = broken.assets.assets[0];
+    if (!asset) {
+      throw new Error("fixture asset missing");
+    }
+    asset.uri = "placeholder://asset-hero-001.png";
+
+    const report = await validatePresentation(broken);
+    const messages = report.issues.map((issue) => issue.message);
+
+    expect(messages.some((message) => message.includes("Elements overlap"))).toBe(true);
+    expect(messages.some((message) => message.includes("Duplicate slide title"))).toBe(true);
+    expect(messages.some((message) => message.includes("too many cells"))).toBe(true);
+    expect(messages.some((message) => message.includes("Placeholder asset"))).toBe(true);
   });
 });
 

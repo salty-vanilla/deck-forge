@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { preflightComponents, synthesizeComponents } from "#/components/component-catalog.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { preflightComponents, synthesizeComponents } from "#src/components/component-catalog.js";
 
 describe("component catalog", () => {
   it("synthesizes missing components and reuses on next preflight", async () => {

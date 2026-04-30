@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { HtmlExporter } from "#/exporters/html/html-exporter.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { HtmlExporter } from "#src/exporters/html/html-exporter.js";
 
 describe("html exporter", () => {
   it("exports HTML as in-memory string when outputPath is not provided", async () => {

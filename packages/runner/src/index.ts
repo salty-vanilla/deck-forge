@@ -1,6 +1,6 @@
-export { DeckForgeRunner } from "#/runner.js";
+export { DeckForgeRunner } from "#src/runner.js";
 export type {
   DeckForgeRunnerOptions,
   DeckForgeRunInput,
   DeckForgeRunResult,
-} from "#/runner.js";
+} from "#src/runner.js";

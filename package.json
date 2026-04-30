@@ -5,6 +5,7 @@
   "description": "Spec driven presentation runtime monorepo.",
   "type": "module",
   "scripts": {
+    "build": "tsc -b",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "format": "biome format --write .",

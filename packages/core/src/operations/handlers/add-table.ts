@@ -1,6 +1,6 @@
-import type { PresentationIR, TableElementIR } from "#/index.js";
-import type { AddTableOperation } from "#/operations/types.js";
-import { collectElementIds, findSlide, generateId, getTargetFrame } from "#/operations/utils.js";
+import type { PresentationIR, TableElementIR } from "#src/index.js";
+import type { AddTableOperation } from "#src/operations/types.js";
+import { collectElementIds, findSlide, generateId, getTargetFrame } from "#src/operations/utils.js";
 
 export function addTable(presentation: PresentationIR, operation: AddTableOperation): void {
   const slide = findSlide(presentation, operation.slideId);

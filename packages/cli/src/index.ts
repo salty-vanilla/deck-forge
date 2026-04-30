@@ -132,6 +132,9 @@ async function runPlan(args: string[], io: CliIO): Promise<number> {
   const slideCountRaw = getOptionValue(args.slice(1), ["--slide-count"]);
   const slideCount = slideCountRaw ? Number(slideCountRaw) : undefined;
   const outputFormat = getOptionValue(args.slice(1), ["--format", "--output-format"]);
+  io.stderr(
+    "warning: plan uses scaffold generation. For production decks, provide Agent-authored createArtifacts.",
+  );
 
   const { brief } = await createPresentationSpec({
     userRequest: requestText,
@@ -185,7 +188,7 @@ async function runBuild(args: string[], io: CliIO): Promise<number> {
   const brief = inputPayload.brief ?? planPayload?.brief;
   const deckPlan = inputPayload.deckPlan ?? planPayload?.deckPlan;
 
-  const buildResult = await resolveBuildResult(inputPayload, brief, deckPlan, acquisitionMode);
+  const buildResult = await resolveBuildResult(inputPayload, brief, deckPlan, acquisitionMode, io);
 
   if (!buildResult) {
     io.stderr(
@@ -569,6 +572,7 @@ async function resolveBuildResult(
   brief: BuildPresentationInput["brief"] | undefined,
   deckPlan: BuildPresentationInput["deckPlan"] | undefined,
   acquisitionMode?: AssetAcquisitionMode,
+  io?: CliIO,
 ): Promise<BuildResultPayload | null> {
   if (
     Array.isArray((payload as BuildPayload).slideSpecs) &&
@@ -584,6 +588,9 @@ async function resolveBuildResult(
     return null;
   }
 
+  io?.stderr(
+    "warning: build is generating scaffold slideSpecs/assetSpecs from plan context. For production decks, prefer Agent-authored artifacts.",
+  );
   const { slideSpecs } = await generateSlideSpecs({
     brief,
     deckPlan,

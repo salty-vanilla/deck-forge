@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { PdfExporter } from "#/exporters/pdf/pdf-exporter.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { PdfExporter } from "#src/exporters/pdf/pdf-exporter.js";
 
 describe("pdf exporter", () => {
   it("exports pdf as in-memory binary data", async () => {

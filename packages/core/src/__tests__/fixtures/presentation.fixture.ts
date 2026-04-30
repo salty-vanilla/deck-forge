@@ -1,4 +1,4 @@
-import type { PresentationIR } from "#/index.js";
+import type { PresentationIR } from "#src/index.js";
 
 export const presentationFixture: PresentationIR = {
   id: "deck-001",
