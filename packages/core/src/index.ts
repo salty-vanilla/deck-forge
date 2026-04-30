@@ -103,384 +103,139 @@ export type {
 } from "#src/runtime/types.js";
 export type { RuntimeSafetyOptions } from "#src/runtime/path-policy.js";
 
+// Artifact types and Zod schemas — single source of truth in `schemas/`.
+import type {
+  AssetRequirement,
+  AssetSpec,
+  AssetSpecRef,
+  AudienceSpec,
+  BrandSpec,
+  BulletItem,
+  BulletListBlock,
+  CalloutBlock,
+  ChartBlock,
+  ChartData,
+  ChartEncoding,
+  ChartSeries,
+  CodeBlock,
+  ContentBlock,
+  ContentRequirement,
+  DeckPlan,
+  DeckSection,
+  DiagramAssetSpec,
+  DiagramBlock,
+  DiagramEdge,
+  DiagramNode,
+  ExternalImageAssetSpec,
+  GeneratedImageAssetSpec,
+  GoalSpec,
+  IconAssetSpec,
+  ImageBlock,
+  ImageSearchCandidate,
+  LayoutIntent,
+  LayoutRegion,
+  LayoutSpec,
+  MetricBlock,
+  NarrativeSpec,
+  NarrativeStep,
+  OutputSpec,
+  ParagraphBlock,
+  PresentationBrief,
+  PresentationConstraints,
+  QuoteBlock,
+  RetrievedImageAssetSpec,
+  ScreenshotAssetSpec,
+  SlideConstraints,
+  SlideIntent,
+  SlidePlan,
+  SlideSpec,
+  SpeakerNotesSpec,
+  SubtitleBlock,
+  TableBlock,
+  TableEmphasis,
+  TitleBlock,
+  ToneSpec,
+  VisualDirectionSpec,
+} from "#src/schemas/intent-artifacts.js";
+export {
+  AssetSpecSchema,
+  AudienceSchema,
+  BrandSchema,
+  BriefSchema,
+  BulletItemSchema,
+  ContentBlockSchema,
+  DeckPlanSchema,
+  ExportFormatSchema,
+  GoalSchema,
+  IdSchema,
+  LayoutRegionSchema,
+  LayoutSchema,
+  LayoutTypeSchema,
+  NarrativeSchema,
+  NarrativeStepSchema,
+  OutputSchema,
+  PresentationConstraintsSchema,
+  SlideIntentSchema,
+  SlideSpecSchema,
+  ToneSchema,
+  VisualDirectionSchema,
+} from "#src/schemas/intent-artifacts.js";
+export type {
+  AssetRequirement,
+  AssetSpec,
+  AssetSpecRef,
+  AudienceSpec,
+  BrandSpec,
+  BulletItem,
+  BulletListBlock,
+  CalloutBlock,
+  ChartBlock,
+  ChartData,
+  ChartEncoding,
+  ChartSeries,
+  CodeBlock,
+  ContentBlock,
+  ContentRequirement,
+  DeckPlan,
+  DeckSection,
+  DiagramAssetSpec,
+  DiagramBlock,
+  DiagramEdge,
+  DiagramNode,
+  ExternalImageAssetSpec,
+  GeneratedImageAssetSpec,
+  GoalSpec,
+  IconAssetSpec,
+  ImageBlock,
+  ImageSearchCandidate,
+  LayoutIntent,
+  LayoutRegion,
+  LayoutSpec,
+  MetricBlock,
+  NarrativeSpec,
+  NarrativeStep,
+  OutputSpec,
+  ParagraphBlock,
+  PresentationBrief,
+  PresentationConstraints,
+  QuoteBlock,
+  RetrievedImageAssetSpec,
+  ScreenshotAssetSpec,
+  SlideConstraints,
+  SlideIntent,
+  SlidePlan,
+  SlideSpec,
+  SpeakerNotesSpec,
+  SubtitleBlock,
+  TableBlock,
+  TableEmphasis,
+  TitleBlock,
+  ToneSpec,
+  VisualDirectionSpec,
+} from "#src/schemas/intent-artifacts.js";
+
 export type Id = string;
 export type ISODateTime = string;
-
-export type PresentationBrief = {
-  id: Id;
-  title: string;
-  audience: AudienceSpec;
-  goal: GoalSpec;
-  context?: string;
-  tone: ToneSpec;
-  narrative: NarrativeSpec;
-  output: OutputSpec;
-  constraints: PresentationConstraints;
-  visualDirection: VisualDirectionSpec;
-  brand?: BrandSpec;
-};
-
-export type AudienceSpec = {
-  primary: string;
-  secondary?: string[];
-  expertiseLevel: "beginner" | "intermediate" | "expert" | "executive";
-  expectedConcern?: string[];
-  expectedQuestions?: string[];
-};
-
-export type GoalSpec = {
-  type:
-    | "inform"
-    | "persuade"
-    | "proposal"
-    | "report"
-    | "training"
-    | "sales"
-    | "research"
-    | "decision_support";
-  mainMessage: string;
-  desiredOutcome: string;
-  successCriteria?: string[];
-};
-
-export type ToneSpec = {
-  formality: "casual" | "business" | "executive" | "academic";
-  energy: "calm" | "confident" | "bold" | "inspiring";
-  technicalDepth: "low" | "medium" | "high";
-  styleKeywords?: string[];
-};
-
-export type NarrativeSpec = {
-  structure:
-    | "problem_solution"
-    | "before_after"
-    | "proposal"
-    | "analysis"
-    | "story"
-    | "pyramid"
-    | "research_paper"
-    | "demo";
-  arc: NarrativeStep[];
-};
-
-export type NarrativeStep = {
-  role:
-    | "hook"
-    | "problem"
-    | "insight"
-    | "solution"
-    | "evidence"
-    | "implementation"
-    | "impact"
-    | "call_to_action";
-  message: string;
-};
-
-export type OutputSpec = {
-  formats: ExportFormat[];
-  aspectRatio: "16:9" | "4:3";
-  language?: string;
-};
-
-export type PresentationConstraints = {
-  slideCount?: number;
-  maxSlideCount?: number;
-  minSlideCount?: number;
-  durationMinutes?: number;
-  mustInclude?: string[];
-  mustAvoid?: string[];
-};
-
-export type BrandSpec = {
-  name?: string;
-  voice?: string;
-  colors?: Partial<ColorTokens>;
-  fonts?: Partial<TypographyTokens["fontFamily"]>;
-  logoAssetId?: Id;
-};
-
-export type DeckPlan = {
-  id: Id;
-  briefId: Id;
-  title: string;
-  slideCountTarget: number;
-  sections: DeckSection[];
-  globalStoryline: string;
-};
-
-export type DeckSection = {
-  id: Id;
-  title: string;
-  role:
-    | "intro"
-    | "background"
-    | "problem"
-    | "proposal"
-    | "analysis"
-    | "solution"
-    | "implementation"
-    | "result"
-    | "appendix";
-  slides: SlidePlan[];
-};
-
-export type SlidePlan = {
-  id: Id;
-  title: string;
-  intent: SlideIntent;
-  expectedLayout: LayoutIntent;
-  contentRequirements: ContentRequirement[];
-  assetRequirements?: AssetRequirement[];
-};
-
-export type SlideIntent = {
-  type:
-    | "title"
-    | "agenda"
-    | "summary"
-    | "problem"
-    | "comparison"
-    | "timeline"
-    | "process"
-    | "architecture"
-    | "data_insight"
-    | "case_study"
-    | "proposal"
-    | "decision"
-    | "closing";
-  keyMessage: string;
-  audienceTakeaway: string;
-};
-
-export type LayoutIntent = LayoutSpec["type"];
-
-export type ContentRequirement = {
-  id: Id;
-  description: string;
-  priority: "low" | "medium" | "high";
-  expectedBlockType?: ContentBlock["type"];
-};
-
-export type AssetRequirement = {
-  id: Id;
-  purpose: GeneratedImageAssetSpec["purpose"] | "diagram" | "icon" | "screenshot";
-  description: string;
-  acquisitionMode?: "generate" | "retrieve" | "auto";
-  targetSlideIds?: Id[];
-};
-
-export type SlideSpec = {
-  id: Id;
-  slideNumber?: number;
-  title: string;
-  intent: SlideIntent;
-  layout: LayoutSpec;
-  content: ContentBlock[];
-  speakerNotes?: SpeakerNotesSpec;
-  assets?: AssetSpecRef[];
-  constraints?: SlideConstraints;
-};
-
-export type SpeakerNotesSpec = {
-  text: string;
-  cues?: string[];
-};
-
-export type AssetSpecRef = {
-  assetId: Id;
-  role: AssetUsage["role"];
-};
-
-export type SlideConstraints = {
-  maxWords?: number;
-  maxBullets?: number;
-  requiredElementIds?: Id[];
-};
-
-export type ContentBlock =
-  | TitleBlock
-  | SubtitleBlock
-  | ParagraphBlock
-  | BulletListBlock
-  | TableBlock
-  | ChartBlock
-  | ImageBlock
-  | DiagramBlock
-  | MetricBlock
-  | CalloutBlock
-  | CodeBlock
-  | QuoteBlock;
-
-export type TitleBlock = {
-  id: Id;
-  type: "title";
-  text: string;
-  emphasis?: "normal" | "strong" | "subtle";
-};
-
-export type SubtitleBlock = {
-  id: Id;
-  type: "subtitle";
-  text: string;
-};
-
-export type ParagraphBlock = {
-  id: Id;
-  type: "paragraph";
-  text: string;
-};
-
-export type BulletListBlock = {
-  id: Id;
-  type: "bullet_list";
-  items: BulletItem[];
-  hierarchy?: "flat" | "nested";
-  density?: "low" | "medium" | "high";
-};
-
-export type BulletItem = {
-  text: string;
-  children?: BulletItem[];
-  importance?: "low" | "medium" | "high";
-};
-
-export type TableBlock = {
-  id: Id;
-  type: "table";
-  caption?: string;
-  headers: string[];
-  rows: string[][];
-  emphasis?: TableEmphasis;
-};
-
-export type TableEmphasis = {
-  rows?: number[];
-  columns?: number[];
-  cells?: Array<{ row: number; column: number }>;
-};
-
-export type ChartBlock = {
-  id: Id;
-  type: "chart";
-  chartType: "bar" | "line" | "area" | "pie" | "scatter" | "combo";
-  title?: string;
-  data: ChartData;
-  encoding: ChartEncoding;
-  insight?: string;
-};
-
-export type ChartData = {
-  series: ChartSeries[];
-  categories?: string[];
-};
-
-export type ChartSeries = {
-  name: string;
-  values: number[];
-};
-
-export type ChartEncoding = {
-  x?: string;
-  y?: string;
-  color?: string;
-  size?: string;
-};
-
-export type DiagramBlock = {
-  id: Id;
-  type: "diagram";
-  diagramType:
-    | "flowchart"
-    | "architecture"
-    | "timeline"
-    | "layered"
-    | "cycle"
-    | "matrix"
-    | "funnel"
-    | "system_map";
-  nodes: DiagramNode[];
-  edges?: DiagramEdge[];
-};
-
-export type DiagramNode = {
-  id: Id;
-  label: string;
-  description?: string;
-  kind?: string;
-};
-
-export type DiagramEdge = {
-  id: Id;
-  from: Id;
-  to: Id;
-  label?: string;
-};
-
-export type ImageBlock = {
-  id: Id;
-  type: "image";
-  assetId: Id;
-  altText?: string;
-  caption?: string;
-};
-
-export type MetricBlock = {
-  id: Id;
-  type: "metric";
-  label: string;
-  value: string;
-  unit?: string;
-  trend?: "up" | "down" | "flat";
-};
-
-export type CalloutBlock = {
-  id: Id;
-  type: "callout";
-  text: string;
-  tone?: "info" | "success" | "warning" | "danger";
-};
-
-export type CodeBlock = {
-  id: Id;
-  type: "code";
-  code: string;
-  language?: string;
-};
-
-export type QuoteBlock = {
-  id: Id;
-  type: "quote";
-  text: string;
-  attribution?: string;
-};
-
-export type LayoutSpec = {
-  type:
-    | "title"
-    | "section"
-    | "single_column"
-    | "two_column"
-    | "three_column"
-    | "hero"
-    | "image_left_text_right"
-    | "text_left_image_right"
-    | "comparison"
-    | "dashboard"
-    | "timeline"
-    | "matrix"
-    | "diagram_focus"
-    | "custom";
-  density: "low" | "medium" | "high";
-  emphasis?: "top" | "left" | "right" | "center" | "visual" | "data";
-  regions?: LayoutRegion[];
-};
-
-export type LayoutRegion = {
-  id: Id;
-  role: "title" | "body" | "visual" | "sidebar" | "footer" | "chart" | "table" | "callout";
-  contentRefs: Id[];
-  priority: number;
-};
 
 export type ResolvedLayout = {
   spec: LayoutSpec;
@@ -615,122 +370,6 @@ export type ComponentPreflightResult = {
     requiredCapability: string;
     suggestedComponentId: string;
   }>;
-};
-
-export type VisualDirectionSpec = {
-  style:
-    | "minimal"
-    | "corporate"
-    | "technical"
-    | "industrial"
-    | "isometric"
-    | "flat_vector"
-    | "photorealistic"
-    | "abstract"
-    | "diagrammatic";
-  mood: "calm" | "trustworthy" | "futuristic" | "energetic" | "premium" | "practical";
-  colorMood?: string;
-  composition?: string;
-  avoid?: string[];
-};
-
-export type AssetSpec =
-  | GeneratedImageAssetSpec
-  | DiagramAssetSpec
-  | IconAssetSpec
-  | ExternalImageAssetSpec
-  | RetrievedImageAssetSpec
-  | ScreenshotAssetSpec;
-
-export type GeneratedImageAssetSpec = {
-  id: Id;
-  type: "generated_image";
-  purpose: "hero" | "background" | "concept" | "illustration" | "thumbnail" | "supporting_visual";
-  visualDirection: VisualDirectionSpec;
-  prompt: string;
-  negativePrompt?: string;
-  aspectRatio: "16:9" | "4:3" | "1:1" | "3:2";
-  resolution?: {
-    width: number;
-    height: number;
-  };
-  targetSlideIds?: Id[];
-};
-
-export type DiagramAssetSpec = {
-  id: Id;
-  type: "diagram";
-  diagramType: DiagramBlock["diagramType"];
-  description: string;
-  targetSlideIds?: Id[];
-};
-
-export type IconAssetSpec = {
-  id: Id;
-  type: "icon";
-  name: string;
-  style?: VisualDirectionSpec["style"];
-  targetSlideIds?: Id[];
-};
-
-export type ExternalImageAssetSpec = {
-  id: Id;
-  type: "external_image";
-  uri: string;
-  altText?: string;
-  provider?: string;
-  author?: string;
-  license?: string;
-  sourcePageUrl?: string;
-  attributionRequired?: boolean;
-  attributionText?: string;
-  query?: string;
-  tags?: string[];
-  targetSlideIds?: Id[];
-};
-
-export type RetrievedImageAssetSpec = {
-  id: Id;
-  type: "retrieved_image";
-  provider:
-    | "unsplash"
-    | "pexels"
-    | "pixabay"
-    | "flaticon"
-    | "noun_project"
-    | "icons8"
-    | "undraw"
-    | "storyset"
-    | "shigureni"
-    | "irasutoya"
-    | "other";
-  query: string;
-  selected?: ImageSearchCandidate;
-  licenseConstraints?: string[];
-  targetSlideIds?: Id[];
-};
-
-export type ImageSearchCandidate = {
-  id: string;
-  provider: string;
-  title?: string;
-  imageUrl: string;
-  sourcePageUrl: string;
-  author?: string;
-  license: string;
-  attributionRequired: boolean;
-  attributionText?: string;
-  width?: number;
-  height?: number;
-  tags?: string[];
-};
-
-export type ScreenshotAssetSpec = {
-  id: Id;
-  type: "screenshot";
-  sourceUrl?: string;
-  description: string;
-  targetSlideIds?: Id[];
 };
 
 export type AssetRegistry = {

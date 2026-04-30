@@ -333,13 +333,18 @@ export type ParseRequestOutput = {
   intent: StructuredIntent;
 };
 
+export type ValidationResult = {
+  valid: boolean;
+  issues: string[];
+};
+
 export type ValidateAgentCreateArtifactsInput = {
   userRequest: string;
   intent: StructuredIntent;
 };
 
-export type ValidateAgentCreateArtifactsOutput = {
-  artifacts: CreatePresentationArtifacts;
+export type ValidateAgentCreateArtifactsOutput = ValidationResult & {
+  artifacts?: CreatePresentationArtifacts;
 };
 
 export type ReviewIssue = {

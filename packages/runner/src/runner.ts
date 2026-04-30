@@ -168,15 +168,24 @@ export class DeckForgeRunner {
           deckPlan,
           slideSpecs,
           assetSpecs: providedAssetSpecs,
-        } = await this.runStep(
-          "validate_agent_artifacts",
-          trace,
-          async () =>
-            validateAgentCreateArtifacts({
-              userRequest: payload.goal,
-              intent: structuredIntent,
-            }).artifacts,
-        );
+        } = await this.runStep("validate_agent_artifacts", trace, async () => {
+          const result = validateAgentCreateArtifacts({
+            userRequest: payload.goal,
+            intent: structuredIntent,
+          });
+          if (!result.valid || !result.artifacts) {
+            // If the parser returned no createArtifacts at all, surface as an
+            // NLU parse failure (preserves prior runner classification);
+            // otherwise it's a structural validation failure.
+            const prefix = structuredIntent.createArtifacts
+              ? "VALIDATION_ERROR"
+              : "NLU_PARSE_ERROR";
+            throw new Error(
+              `${prefix}: invalid agent create artifacts: ${result.issues.join("; ")}`,
+            );
+          }
+          return result.artifacts;
+        });
         const componentPreflight = await this.runStep("component_preflight", trace, async () =>
           componentPreflightHandler({ slideSpecs }),
         );

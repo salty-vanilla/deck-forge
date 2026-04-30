@@ -37,7 +37,31 @@ export {
 export { searchAssetsHandler } from "#src/handlers/search-assets-handler.js";
 export { updateChartDataHandler } from "#src/handlers/update-chart-data-handler.js";
 export { validatePresentationHandler } from "#src/handlers/validate-presentation-handler.js";
-export { validateAgentCreateArtifacts } from "#src/validators/agent-create-artifacts.js";
+export {
+  ASSET_SPEC_JSON_SCHEMA,
+  BRIEF_JSON_SCHEMA,
+  CONTENT_BLOCK_JSON_SCHEMA,
+  DECK_PLAN_JSON_SCHEMA,
+  SLIDE_SPEC_JSON_SCHEMA,
+} from "#src/schemas/json-schemas.js";
+export type { JsonSchema } from "#src/schemas/json-schemas.js";
+export {
+  getBriefGenerationPrompt,
+  getDeckPlanGenerationPrompt,
+  getSlideSpecGenerationPrompt,
+} from "#src/prompts/intent-parser-prompts.js";
+export type {
+  BriefPromptInput,
+  DeckPlanPromptInput,
+  SlideSpecPromptInput,
+} from "#src/prompts/intent-parser-prompts.js";
+export { validateBrief } from "#src/validators/validate-brief.js";
+export type { ValidateBriefOptions } from "#src/validators/validate-brief.js";
+export { validateDeckPlan } from "#src/validators/validate-deck-plan.js";
+export type { ValidateDeckPlanOptions } from "#src/validators/validate-deck-plan.js";
+export { validateSlideSpec } from "#src/validators/validate-slide-spec.js";
+export type { ValidateSlideSpecOptions } from "#src/validators/validate-slide-spec.js";
+export { validateAgentCreateArtifacts } from "#src/validators/validate-create-artifacts.js";
 export type {
   AddChartInput,
   AddChartOutput,
@@ -92,4 +116,5 @@ export type {
   ValidatePresentationOutput,
   ValidateAgentCreateArtifactsInput,
   ValidateAgentCreateArtifactsOutput,
+  ValidationResult,
 } from "#src/types.js";
