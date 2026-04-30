@@ -14,6 +14,12 @@ export type {
   SlideImageExportResult,
   SlideImageRenderInput,
   SlideImageRenderer,
+  VisualReviewer,
+  VisualReviewerInput,
+  VisualReviewerOutput,
+  VisualReviewFinding,
+  VisualReviewFocus,
+  VisualReviewSeverity,
 } from "#src/review/types.js";
 export { applyOperations } from "#src/operations/apply-operations.js";
 export type {
@@ -102,6 +108,19 @@ export type {
   RuntimeReviewPacketOptions,
 } from "#src/runtime/types.js";
 export type { RuntimeSafetyOptions } from "#src/runtime/path-policy.js";
+export type {
+  DesignFocus,
+  SlideDesigner,
+  SlideDesignerInput,
+  SlideDesignerOutput,
+} from "#src/design/types.js";
+export { HeuristicSlideDesigner } from "#src/design/heuristic-slide-designer.js";
+export { runDesignReviewLoop } from "#src/runtime/design-review-loop.js";
+export type {
+  DesignReviewIterationTrace,
+  DesignReviewLoopInput,
+  DesignReviewLoopOutput,
+} from "#src/runtime/design-review-loop.js";
 
 // Artifact types and Zod schemas — single source of truth in `schemas/`.
 import type {
@@ -494,6 +513,18 @@ export type TextElementIR = {
   text: RichText;
   frame: ResolvedFrame;
   style: TextStyle;
+  /**
+   * Optional visual decoration hint propagated from a `LayoutStrategy`.
+   * Exporters render matching styling (card, accent bar, divider) when
+   * supported and silently ignore unknown values.
+   */
+  decoration?: ElementDecoration;
+};
+
+export type ElementDecoration = {
+  kind: "card" | "accent-bar" | "divider";
+  /** Optional override for the accent color used by the decoration. */
+  color?: string;
 };
 
 export type ShapeElementIR = {

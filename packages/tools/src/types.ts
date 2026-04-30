@@ -7,6 +7,7 @@ import type {
   ComponentSpec,
   CreatePresentationSpecInput,
   DeckPlan,
+  DesignFocus,
   ExportResult,
   ExternalImageAssetSpec,
   GeneratedImageAssetSpec,
@@ -18,10 +19,15 @@ import type {
   PresentationOperation,
   PresentationReviewPacket,
   RetrievedImageAssetSpec,
+  SlideDesigner,
+  SlideImage,
   SlideImageRenderer,
   SlideSpec,
   ThemeSpec,
   ValidationReport,
+  VisualReviewFinding,
+  VisualReviewFocus,
+  VisualReviewer,
 } from "@deck-forge/core";
 
 export type ApplyPresentationOperationsInput = {
@@ -386,3 +392,57 @@ export type PlanPresentationOperationsOutput = {
 export interface PresentationOperationPlanner {
   plan(input: PlanPresentationOperationsInput): Promise<PresentationOperation[]>;
 }
+
+// ---------------------------------------------------------------------------
+// presentation_design_pass
+// ---------------------------------------------------------------------------
+
+export type DesignPassInput = {
+  presentation: PresentationIR;
+  /**
+   * Restrict the pass to a single slide. When omitted, the designer is run
+   * over every slide and operations are accumulated and applied in one batch.
+   */
+  slideId?: string;
+  options?: {
+    focus?: DesignFocus[];
+    maxOperations?: number;
+  };
+  /**
+   * Optional designer override. When omitted, the handler uses the value set
+   * via `setSlideDesigner()`. Throws if neither is set.
+   */
+  designer?: SlideDesigner;
+};
+
+export type DesignPassRationale = {
+  slideId: string;
+  rationale?: string;
+};
+
+export type DesignPassOutput = {
+  presentation: PresentationIR;
+  operations: PresentationOperation[];
+  rationales: DesignPassRationale[];
+};
+
+// ---------------------------------------------------------------------------
+// presentation_visual_review
+// ---------------------------------------------------------------------------
+
+export type VisualReviewInput = {
+  presentation: PresentationIR;
+  /** Pre-rendered slide images (optional). */
+  slideImages?: SlideImage[];
+  focus?: VisualReviewFocus[];
+  /**
+   * Optional reviewer override. When omitted, the handler uses the value set
+   * via `setVisualReviewer()`. Throws if neither is set.
+   */
+  visualReviewer?: VisualReviewer;
+};
+
+export type VisualReviewOutput = {
+  findings: VisualReviewFinding[];
+  operations: PresentationOperation[];
+};

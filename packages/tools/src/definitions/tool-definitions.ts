@@ -151,6 +151,52 @@ export const presentationTools: ToolDefinition[] = [
     },
   },
   {
+    name: "presentation_design_pass",
+    description:
+      "Run a SlideDesigner over the presentation (or a single slide) to refine typography, hierarchy and emphasis. Returns the updated presentation, the operations applied, and per-slide rationales.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        presentation: { type: "object" },
+        slideId: { type: "string" },
+        options: {
+          type: "object",
+          properties: {
+            focus: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: ["layout", "typography", "color", "hierarchy", "decoration"],
+              },
+            },
+            maxOperations: { type: "number" },
+          },
+        },
+      },
+      required: ["presentation"],
+    },
+  },
+  {
+    name: "presentation_visual_review",
+    description:
+      "Run a VisualReviewer over a presentation (and optional pre-rendered slide images). Returns findings + suggested operations. Operations are NOT auto-applied; pipe them through presentation_apply_operations to materialize.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        presentation: { type: "object" },
+        slideImages: { type: "array", items: { type: "object" } },
+        focus: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["overlap", "hierarchy", "color", "typography", "decoration", "balance"],
+          },
+        },
+      },
+      required: ["presentation"],
+    },
+  },
+  {
     name: "presentation_add_chart",
     description: "Add a chart element to a target slide.",
     inputSchema: {

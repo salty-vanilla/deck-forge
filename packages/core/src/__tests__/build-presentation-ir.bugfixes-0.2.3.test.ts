@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { buildPresentationIr } from "#src/builders/build-presentation-ir.js";
-import { validatePresentation } from "#src/validation/validate-presentation.js";
 import type { DeckPlan, PresentationBrief, SlideSpec } from "#src/index.js";
+import { validatePresentation } from "#src/validation/validate-presentation.js";
 
 // Minimal helpers (mirrors patterns from build-presentation-ir.bugfixes.test.ts).
 function makeBrief(): PresentationBrief {
@@ -142,10 +142,7 @@ describe("buildPresentationIr — native bullet metadata", () => {
       {
         id: "block-bullets",
         type: "bullet_list",
-        items: [
-          { text: "Top item", children: [{ text: "Nested item" }] },
-          { text: "Sibling" },
-        ],
+        items: [{ text: "Top item", children: [{ text: "Nested item" }] }, { text: "Sibling" }],
       },
     ]);
 
@@ -161,9 +158,7 @@ describe("buildPresentationIr — native bullet metadata", () => {
 
     const bullet = slide.elements.find(
       (element) =>
-        element.type === "text" &&
-        element.role === "body" &&
-        element.id === "block-bullets",
+        element.type === "text" && element.role === "body" && element.id === "block-bullets",
     );
     expect(bullet).toBeDefined();
     if (!bullet || bullet.type !== "text") return;
@@ -203,9 +198,7 @@ describe("buildPresentationIr — overlap-free dense slide", () => {
     });
 
     const report = await validatePresentation(ir);
-    const overlapIssues = report.issues.filter((issue) =>
-      issue.message.includes("overlap"),
-    );
+    const overlapIssues = report.issues.filter((issue) => issue.message.includes("overlap"));
     expect(overlapIssues).toEqual([]);
   });
 });

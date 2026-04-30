@@ -7,6 +7,7 @@ import {
   componentPreflightHandler,
   componentSynthesizeHandler,
   createPresentationSpecHandler,
+  designPassHandler,
   exportPresentationHandler,
   exportSlideImagesHandler,
   generateAssetPlanHandler,
@@ -21,6 +22,7 @@ import {
   searchAssetsHandler,
   updateChartDataHandler,
   validatePresentationHandler,
+  visualReviewHandler,
 } from "@deck-forge/tools";
 import { tool } from "@strands-agents/sdk";
 import { z } from "zod";
@@ -41,6 +43,8 @@ const handlerMap: Record<string, StrandsPresentationToolHandler> = {
     applyPresentationOperationsHandler(input as never),
   presentation_review: async (input) => reviewPresentationHandler(input as never),
   presentation_plan_operations: async (input) => planPresentationOperationsHandler(input as never),
+  presentation_design_pass: async (input) => designPassHandler(input as never),
+  presentation_visual_review: async (input) => visualReviewHandler(input as never),
   presentation_add_chart: async (input) => addChartHandler(input as never),
   presentation_update_chart_data: async (input) => updateChartDataHandler(input as never),
   presentation_inspect: async (input) => inspectPresentationHandler(input as never),

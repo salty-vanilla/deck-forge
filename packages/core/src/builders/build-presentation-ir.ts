@@ -1,3 +1,5 @@
+import { selectLayoutStrategy } from "#src/builders/layouts/index.js";
+import type { LayoutHints, SubFrameAssignment } from "#src/builders/layouts/index.js";
 import type {
   Asset,
   AssetMetadata,
@@ -195,16 +197,53 @@ function buildElements(
   const imageBlocks = content.filter((block) => block.type === "image");
   const calloutBlocks = content.filter((block) => block.type === "callout");
 
-  const bodyFrames = splitVertical(bodyRegionFrame, bodyBlocks.length || 1);
-  const tableFrames = splitVertical(tableRegionFrame, tableBlocks.length || 1);
-  const imageFrames = splitVertical(visualRegionFrame, imageBlocks.length || 1);
-  const calloutFrames = splitVertical(calloutRegionFrame, calloutBlocks.length || 1);
+  // Blocks the layout strategy is responsible for placing (everything except
+  // title/subtitle, which the outer shell positions in the title region).
+  const placedBlocks = content.filter(
+    (block) => block.type !== "title" && block.type !== "subtitle",
+  );
+
+  const strategy = selectLayoutStrategy({
+    slideSpec,
+    layoutSpec,
+    regions,
+    theme,
+    slideSize: DEFAULT_SLIDE_SIZE,
+    blocks: placedBlocks,
+    regionFrames: {
+      body: bodyRegionFrame,
+      visual: visualRegionFrame,
+      callout: calloutRegionFrame,
+      table: tableRegionFrame,
+    },
+  });
+  const assignments = strategy.layout({
+    slideSpec,
+    layoutSpec,
+    regions,
+    theme,
+    slideSize: DEFAULT_SLIDE_SIZE,
+    blocks: placedBlocks,
+    regionFrames: {
+      body: bodyRegionFrame,
+      visual: visualRegionFrame,
+      callout: calloutRegionFrame,
+      table: tableRegionFrame,
+    },
+  });
+  const assignmentByBlock = new Map<string, SubFrameAssignment>(
+    assignments.map((assignment) => [assignment.blockId, assignment]),
+  );
+
+  // Suppress unused-variable warnings: the per-region split is now handled
+  // by the layout strategy, but we keep the typed groupings around for
+  // possible future use (debug logging, density-aware fallbacks).
+  void bodyBlocks;
+  void tableBlocks;
+  void imageBlocks;
+  void calloutBlocks;
 
   const elements: SlideIR["elements"] = [];
-  let bodyIndex = 0;
-  let tableIndex = 0;
-  let imageIndex = 0;
-  let calloutIndex = 0;
 
   for (const block of content) {
     if (block.type === "title") {
@@ -244,23 +283,30 @@ function buildElements(
       continue;
     }
 
+    const assignment = assignmentByBlock.get(block.id);
+    const hints = assignment?.hints;
+
     if (block.type === "paragraph") {
       elements.push(
         createTextElement({
           blockId: block.id,
           text: block.text,
-          role: "body",
-          frame: bodyFrames[bodyIndex] ?? bodyRegionFrame,
-          style: {
-            fontFamily: theme.typography.fontFamily.body,
-            fontSize: theme.typography.fontSize.body,
-            color: theme.colors.textPrimary,
-            lineHeight: theme.typography.lineHeight.normal,
-          },
+          role: hints?.role ?? "body",
+          frame: assignment?.frame ?? bodyRegionFrame,
+          style: applyHintsToStyle(
+            {
+              fontFamily: theme.typography.fontFamily.body,
+              fontSize: theme.typography.fontSize.body,
+              color: theme.colors.textPrimary,
+              lineHeight: theme.typography.lineHeight.normal,
+            },
+            hints,
+          ),
+          alignment: hints?.alignment,
+          decoration: decorationFromHints(hints),
           usedElementIds,
         }),
       );
-      bodyIndex += 1;
       continue;
     }
 
@@ -269,17 +315,21 @@ function buildElements(
         createTextElement({
           blockId: block.id,
           text: bulletListToRichText(block),
-          role: "body",
-          frame: bodyFrames[bodyIndex] ?? bodyRegionFrame,
-          style: {
-            fontFamily: theme.typography.fontFamily.body,
-            fontSize: theme.typography.fontSize.body,
-            color: theme.colors.textPrimary,
-          },
+          role: hints?.role ?? "body",
+          frame: assignment?.frame ?? bodyRegionFrame,
+          style: applyHintsToStyle(
+            {
+              fontFamily: theme.typography.fontFamily.body,
+              fontSize: theme.typography.fontSize.body,
+              color: theme.colors.textPrimary,
+            },
+            hints,
+          ),
+          alignment: hints?.alignment,
+          decoration: decorationFromHints(hints),
           usedElementIds,
         }),
       );
-      bodyIndex += 1;
       continue;
     }
 
@@ -287,7 +337,7 @@ function buildElements(
       elements.push({
         id: ensureUniqueId(block.id, usedElementIds),
         type: "table",
-        frame: tableFrames[tableIndex] ?? tableRegionFrame,
+        frame: assignment?.frame ?? tableRegionFrame,
         headers: block.headers,
         rows: normalizeTableRows(block),
         style: {
@@ -300,7 +350,6 @@ function buildElements(
           },
         },
       });
-      tableIndex += 1;
       continue;
     }
 
@@ -310,9 +359,8 @@ function buildElements(
         type: "image",
         assetId: block.assetId,
         role: "inline",
-        frame: imageFrames[imageIndex] ?? visualRegionFrame,
+        frame: assignment?.frame ?? visualRegionFrame,
       });
-      imageIndex += 1;
       continue;
     }
 
@@ -321,18 +369,22 @@ function buildElements(
         createTextElement({
           blockId: block.id,
           text: block.text,
-          role: "callout",
-          frame: calloutFrames[calloutIndex] ?? calloutRegionFrame,
-          style: {
-            fontFamily: theme.typography.fontFamily.body,
-            fontSize: theme.typography.fontSize.body,
-            color: toneColor(block, theme),
-            bold: true,
-          },
+          role: hints?.role ?? "callout",
+          frame: assignment?.frame ?? calloutRegionFrame,
+          style: applyHintsToStyle(
+            {
+              fontFamily: theme.typography.fontFamily.body,
+              fontSize: theme.typography.fontSize.body,
+              color: toneColor(block, theme),
+              bold: true,
+            },
+            hints,
+          ),
+          alignment: hints?.alignment,
+          decoration: decorationFromHints(hints),
           usedElementIds,
         }),
       );
-      calloutIndex += 1;
       continue;
     }
 
@@ -346,22 +398,48 @@ function buildElements(
         createTextElement({
           blockId: metricBlock.id,
           text: `${metricBlock.label}\n${valueText}${arrow}`,
-          role: "callout",
-          frame: calloutFrames[calloutIndex] ?? calloutRegionFrame,
-          style: {
-            fontFamily: theme.typography.fontFamily.heading,
-            fontSize: theme.typography.fontSize.heading,
-            color: theme.colors.primary,
-            bold: true,
-          },
+          role: hints?.role ?? "callout",
+          frame: assignment?.frame ?? calloutRegionFrame,
+          style: applyHintsToStyle(
+            {
+              fontFamily: theme.typography.fontFamily.heading,
+              fontSize: theme.typography.fontSize.heading,
+              color: theme.colors.primary,
+              bold: true,
+            },
+            hints,
+          ),
+          alignment: hints?.alignment,
+          decoration: decorationFromHints(hints) ?? { kind: "card" },
           usedElementIds,
         }),
       );
-      calloutIndex += 1;
     }
   }
 
   return elements;
+}
+
+function applyHintsToStyle(
+  base: TextElementIR["style"],
+  hints: LayoutHints | undefined,
+): TextElementIR["style"] {
+  if (!hints?.fontScale || hints.fontScale === 1) {
+    return base;
+  }
+  if (typeof base.fontSize !== "number") {
+    return base;
+  }
+  return { ...base, fontSize: Math.round(base.fontSize * hints.fontScale) };
+}
+
+function decorationFromHints(
+  hints: LayoutHints | undefined,
+): TextElementIR["decoration"] | undefined {
+  if (!hints?.decoration || hints.decoration === "none") {
+    return undefined;
+  }
+  return { kind: hints.decoration };
 }
 
 function buildAssetRegistry(
@@ -698,16 +776,31 @@ function createTextElement(input: {
   role: TextElementIR["role"];
   frame: ResolvedFrame;
   style: TextElementIR["style"];
+  alignment?: "left" | "center" | "right";
+  decoration?: TextElementIR["decoration"];
   usedElementIds: Set<string>;
 }): TextElementIR {
-  return {
+  const richText = typeof input.text === "string" ? toRichText(input.text) : input.text;
+  const text: RichText = input.alignment
+    ? {
+        paragraphs: richText.paragraphs.map((paragraph) => ({
+          ...paragraph,
+          alignment: paragraph.alignment ?? input.alignment,
+        })),
+      }
+    : richText;
+  const element: TextElementIR = {
     id: ensureUniqueId(input.blockId, input.usedElementIds),
     type: "text",
     role: input.role,
-    text: typeof input.text === "string" ? toRichText(input.text) : input.text,
+    text,
     frame: input.frame,
     style: input.style,
   };
+  if (input.decoration) {
+    element.decoration = input.decoration;
+  }
+  return element;
 }
 
 function toRichText(text: string): RichText {
@@ -782,55 +875,6 @@ function frameForRole(
     return match.frame;
   }
   return defaultFrameForRole(role, DEFAULT_SLIDE_SIZE);
-}
-
-const MIN_SLOT_HEIGHT = 60;
-
-function splitVertical(frame: ResolvedFrame, count: number): ResolvedFrame[] {
-  if (count <= 1) {
-    return [frame];
-  }
-
-  const gap = count >= 3 ? 18 : 12;
-
-  // Clamp count so each sub-frame has at least MIN_SLOT_HEIGHT.
-  // (frame.height + gap) / (MIN_SLOT_HEIGHT + gap) is the largest count that satisfies
-  // count * MIN_SLOT_HEIGHT + (count - 1) * gap <= frame.height.
-  const maxByMinHeight = Math.max(
-    1,
-    Math.floor((frame.height + gap) / (MIN_SLOT_HEIGHT + gap)),
-  );
-  const effectiveCount = Math.min(count, maxByMinHeight);
-
-  const totalGap = gap * (effectiveCount - 1);
-  const slotHeight = Math.max(
-    MIN_SLOT_HEIGHT,
-    Math.floor((frame.height - totalGap) / effectiveCount),
-  );
-  const frames: ResolvedFrame[] = [];
-
-  for (let index = 0; index < effectiveCount; index += 1) {
-    frames.push({
-      x: frame.x,
-      y: frame.y + index * (slotHeight + gap),
-      width: frame.width,
-      height: slotHeight,
-    });
-  }
-
-  // If we had to clamp, reuse the last slot for the overflow blocks so they
-  // do not spill into adjacent regions. Validation surfaces the resulting
-  // overlap as a warning.
-  if (effectiveCount < count) {
-    const lastFrame = frames[frames.length - 1];
-    if (lastFrame) {
-      for (let index = effectiveCount; index < count; index += 1) {
-        frames.push({ ...lastFrame });
-      }
-    }
-  }
-
-  return frames;
 }
 
 function ensureUniqueId(id: string, usedIds: Set<string>): string {

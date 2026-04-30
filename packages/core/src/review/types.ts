@@ -7,6 +7,7 @@ import type {
   ValidationReport,
 } from "#src/index.js";
 import type { InspectResult } from "#src/inspect/types.js";
+import type { PresentationOperation } from "#src/operations/types.js";
 
 export type SlideImage = {
   slideId: string;
@@ -69,3 +70,60 @@ export type PresentationReviewPacket = {
 export type SlideImageExportResult = {
   images: SlideImage[];
 };
+
+// ---------------------------------------------------------------------------
+// Visual review
+// ---------------------------------------------------------------------------
+
+export type VisualReviewFocus =
+  | "overlap"
+  | "hierarchy"
+  | "color"
+  | "typography"
+  | "decoration"
+  | "balance";
+
+export type VisualReviewSeverity = "info" | "warning" | "error";
+
+export type VisualReviewFinding = {
+  slideId: string;
+  /** Optional element this finding pertains to. */
+  elementId?: string;
+  severity: VisualReviewSeverity;
+  /** Free-form category tag (e.g. "overlap", "low-contrast"). */
+  category: string;
+  message: string;
+  /**
+   * Optional anchor pointing into the inspect tree, useful for downstream
+   * UIs that highlight the offending region.
+   */
+  anchor?: string;
+};
+
+export type VisualReviewerInput = {
+  presentation: PresentationIR;
+  /** Slide images already rendered by the runtime (optional). */
+  slideImages?: SlideImage[];
+  /** Output of `inspectPresentation()` (optional, for grounding). */
+  inspectSummary?: InspectResult;
+  /** Existing validation report (optional). */
+  validationReport?: ValidationReport;
+  focus?: VisualReviewFocus[];
+};
+
+export type VisualReviewerOutput = {
+  findings: VisualReviewFinding[];
+  /** Operations the reviewer suggests to address the findings. */
+  operations: PresentationOperation[];
+};
+
+/**
+ * A `VisualReviewer` inspects rendered slide images plus structural data and
+ * proposes a set of findings + operations. deck-forge ships only the
+ * interface; concrete VLM-powered reviewers live in agentra (or other
+ * downstream packages).
+ */
+export interface VisualReviewer {
+  readonly name: string;
+  review(input: VisualReviewerInput): Promise<VisualReviewerOutput>;
+}

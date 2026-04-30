@@ -1,5 +1,95 @@
 # @deck-forge/core
 
+## 0.3.0
+
+### Minor Changes
+
+The 0.3.0 release lifts the visual quality of the IR→render/review pipeline
+through five layered additions. All changes are additive: existing IR
+documents, MCP tool inputs, and exporter outputs remain backwards-compatible.
+
+#### Phase 1 — `LayoutStrategy` foundation
+
+- New `LayoutStrategy` interface in `packages/core/src/builders/layouts/`
+  with priority-sorted dispatch (`hero=60`, `kpi-grid=50`, `two-column=30`,
+  `single-stack=0`).
+- `buildElements` in `build-presentation-ir.ts` now delegates to the strategy
+  registry. Components in the catalog (kpi-grid, two-column, hero, timeline)
+  pick the appropriate layout via `selectLayoutStrategy(...)`.
+- Public exports: `LayoutStrategy`, `LayoutHints`, `LayoutContext`,
+  `SubFrameAssignment`, `BUILTIN_LAYOUT_STRATEGIES`, `selectLayoutStrategy`.
+
+#### Phase 2 — `SlideDesigner` plug-in
+
+- New `SlideDesigner` interface in `packages/core/src/design/types.ts` and
+  reference `HeuristicSlideDesigner` (idempotent, baseline-relative): short
+  titles get 1.15× boost, long titles 0.85× shrink, dense callouts 0.85×
+  body-baseline floored at 14 px, bold bullet runs receive the accent
+  color.
+- `LocalPresentationRuntime` gains a `designer` hook plus
+  `designSlide(presentation, slideId, options?)` and
+  `runDesignPass(presentation, options?)` methods.
+- New MCP tool `presentation_design_pass` with
+  `setSlideDesigner()`/`getSlideDesigner()` injection (registered both in
+  `@deck-forge/mcp-server` and `@deck-forge/adapters`).
+
+#### Phase 3 — `VisualReviewer` + design-review loop
+
+- New `VisualReviewer` interface in `packages/core/src/review/types.ts` and
+  `runDesignReviewLoop({ designer?, visualReviewer, renderer, maxIterations,
+  stopWhen })` helper that pipes designer → renderer → reviewer → applyOps
+  per iteration.
+- `LocalPresentationRuntime` gains a `visualReviewer` hook plus a
+  `visualReview(presentation, options?)` method.
+- New MCP tool `presentation_visual_review` with
+  `setVisualReviewer()`/`getVisualReviewer()` injection.
+
+#### Phase 4 — Decoration & typography tokens
+
+- `TextElementIR` gains an optional
+  `decoration?: { kind: "card" | "accent-bar" | "divider"; color?: string }`
+  field. `build-presentation-ir` propagates decoration via `decorationFromHints`
+  (metric blocks default to `card`).
+- `HtmlExporter` now emits `--space-{xs..xl}`, `--radius-{sm,md,lg}`, and
+  `--shadow-{sm,md,lg}` CSS variables wired from the theme; renders bullet
+  paragraphs as semantic `<ul><li class="indent-N">`; draws an accent stripe
+  under titles; and applies `.deco-card`/`.deco-accent-bar`/`.deco-divider`
+  classes to decorated elements.
+- `PptxExporter` honours decoration on text elements (card → `fill` +
+  `rectRadius` derived from `theme.radius.md`; accent-bar → coloured left
+  border) and now renders `ShapeElementIR` via `addShape` for
+  rect/round_rect/ellipse/line/arrow.
+
+#### Phase 5 — Chart, diagram, and shape exporters
+
+- `HtmlExporter` renders `ChartElementIR` (bar/line/area/pie/scatter; combo
+  falls back to bar) as inline SVG using the theme palette, with optional
+  legend and y-axis grid.
+- `HtmlExporter` renders `DiagramElementIR` as inline SVG with three
+  layouts: cycle (radial), matrix (grid), and a horizontal sequence used by
+  flowchart/timeline/funnel/layered. Explicit edges become arrowed lines;
+  flowchart/timeline/funnel/layered without edges get implicit consecutive
+  arrows.
+- `HtmlExporter` renders `ShapeElementIR` as inline SVG.
+- `PptxExporter` calls `addChart` for charts (palette/legend/grid sourced
+  from the theme) and emits `roundRect` node + `line` edge shapes for
+  diagrams via `addShape`, using the same layout algorithm as the HTML
+  exporter so HTML and PPTX previews stay consistent.
+
+### Notes for downstream consumers (e.g. agentra)
+
+deck-forge intentionally ships only interfaces for the LLM/VLM-powered
+designer and reviewer. Concrete implementations should:
+
+1. `import { setSlideDesigner } from "@deck-forge/tools"` and supply a
+   designer that calls Bedrock/OpenAI/etc.
+2. `import { setVisualReviewer } from "@deck-forge/tools"` and supply a VLM
+   reviewer that returns `PresentationOperation`s.
+3. Drive the loop with `runDesignReviewLoop` (or the new MCP tools
+   `presentation_design_pass` and `presentation_visual_review`).
+
+See `docs/release-0.3.0.md` for a worked agentra wiring example.
+
 ## 0.2.3
 
 ### Bug Fixes

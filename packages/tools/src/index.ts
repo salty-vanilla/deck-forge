@@ -7,6 +7,11 @@ export { buildReviewPacketHandler } from "#src/handlers/build-review-packet-hand
 export { componentPreflightHandler } from "#src/handlers/component-preflight-handler.js";
 export { componentSynthesizeHandler } from "#src/handlers/component-synthesize-handler.js";
 export { createPresentationSpecHandler } from "#src/handlers/create-presentation-spec-handler.js";
+export {
+  designPassHandler,
+  getSlideDesigner,
+  setSlideDesigner,
+} from "#src/handlers/design-pass-handler.js";
 export { exportPresentationHandler } from "#src/handlers/export-presentation-handler.js";
 export {
   exportSlideImagesHandler,
@@ -37,6 +42,11 @@ export {
 export { searchAssetsHandler } from "#src/handlers/search-assets-handler.js";
 export { updateChartDataHandler } from "#src/handlers/update-chart-data-handler.js";
 export { validatePresentationHandler } from "#src/handlers/validate-presentation-handler.js";
+export {
+  getVisualReviewer,
+  setVisualReviewer,
+  visualReviewHandler,
+} from "#src/handlers/visual-review-handler.js";
 export {
   ASSET_SPEC_JSON_SCHEMA,
   BRIEF_JSON_SCHEMA,

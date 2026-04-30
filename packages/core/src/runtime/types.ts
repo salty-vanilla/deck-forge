@@ -1,3 +1,4 @@
+import type { SlideDesigner } from "#src/design/types.js";
 import type {
   ExportOptions,
   ExportResult,
@@ -12,6 +13,7 @@ import type {
   BuildReviewPacketOptions,
   PresentationReviewPacket,
   SlideImageRenderer,
+  VisualReviewer,
 } from "#src/review/types.js";
 import type { RuntimeSafetyOptions } from "#src/runtime/path-policy.js";
 import type { ValidateOptions } from "#src/validation/types.js";
@@ -53,6 +55,8 @@ export type LocalPresentationRuntimeOptions = {
   imageGenerators?: ImageGenerator[];
   slideImageRenderer?: SlideImageRenderer;
   validator?: PresentationValidator;
+  designer?: SlideDesigner;
+  visualReviewer?: VisualReviewer;
   safety?: RuntimeSafetyOptions;
   layoutResolver?: unknown;
 };

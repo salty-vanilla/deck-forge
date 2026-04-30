@@ -7,6 +7,7 @@ import {
   componentPreflightHandler,
   componentSynthesizeHandler,
   createPresentationSpecHandler,
+  designPassHandler,
   exportPresentationHandler,
   exportSlideImagesHandler,
   generateAssetPlanHandler,
@@ -20,6 +21,7 @@ import {
   searchAssetsHandler,
   updateChartDataHandler,
   validatePresentationHandler,
+  visualReviewHandler,
 } from "@deck-forge/tools";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -293,6 +295,65 @@ export function registerTools(server: McpServer, policy?: ToolRuntimePolicy): vo
           presentation: presentation as never,
           issues: issues as never,
           goal,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "presentation_design_pass",
+    {
+      description:
+        "Run a SlideDesigner over the presentation (or a single slide) to refine typography, hierarchy and emphasis.",
+      inputSchema: {
+        presentation: anyObject,
+        slideId: z.string().optional(),
+        options: z
+          .object({
+            focus: z
+              .array(z.enum(["layout", "typography", "color", "hierarchy", "decoration"]))
+              .optional(),
+            maxOperations: z.number().optional(),
+          })
+          .optional(),
+      },
+    },
+    async ({ presentation, slideId, options }) => {
+      try {
+        const output = await designPassHandler({
+          presentation: presentation as never,
+          slideId,
+          options,
+        });
+        return toToolResult(output);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "presentation_visual_review",
+    {
+      description:
+        "Run a VisualReviewer over a presentation. Returns findings + suggested operations (NOT auto-applied).",
+      inputSchema: {
+        presentation: anyObject,
+        slideImages: z.array(anyObject).optional(),
+        focus: z
+          .array(z.enum(["overlap", "hierarchy", "color", "typography", "decoration", "balance"]))
+          .optional(),
+      },
+    },
+    async ({ presentation, slideImages, focus }) => {
+      try {
+        const output = await visualReviewHandler({
+          presentation: presentation as never,
+          slideImages: slideImages as never,
+          focus,
         });
         return toToolResult(output);
       } catch (error) {

@@ -4,12 +4,15 @@ import path from "node:path";
 import PptxGenJS from "pptxgenjs";
 
 import type {
+  ChartElementIR,
+  DiagramElementIR,
   ExportOptions,
   ExportResult,
   Exporter,
   ImageElementIR,
   PresentationIR,
   ResolvedFrame,
+  ShapeElementIR,
   SlideSize,
   TableElementIR,
   TextElementIR,
@@ -26,6 +29,12 @@ type MinimalPptxSlide = {
   ) => void;
   addImage: (options: Record<string, unknown>) => void;
   addTable: (rows: string[][], options: Record<string, unknown>) => void;
+  addShape?: (shapeName: string, options: Record<string, unknown>) => void;
+  addChart?: (
+    type: string,
+    data: Array<{ name: string; labels?: string[]; values: number[] }>,
+    options: Record<string, unknown>,
+  ) => void;
   addNotes?: (notes: string[]) => void;
 };
 
@@ -99,8 +108,24 @@ export class PptxExporter implements Exporter {
           continue;
         }
 
+        if (element.type === "shape") {
+          renderShapeElement(slide, element, baseSlideSize, presentation.theme);
+          continue;
+        }
+
+        if (element.type === "chart") {
+          renderChartElement(slide, element, baseSlideSize, presentation.theme);
+          continue;
+        }
+
+        if (element.type === "diagram") {
+          renderDiagramElement(slide, element, baseSlideSize, presentation.theme);
+          continue;
+        }
+
+        const unhandled = element as { id: string; type: string };
         warnings.push(
-          `Slide ${slideIR.id} element ${element.id} (${element.type}) is not supported by minimal PptxExporter.`,
+          `Slide ${slideIR.id} element ${unhandled.id} (${unhandled.type}) is not supported by minimal PptxExporter.`,
         );
       }
 
@@ -167,15 +192,82 @@ function renderTextElement(
     options.paraSpaceAfter = 6;
   }
 
-  if (element.role === "callout") {
+  // Decoration hint propagated from layout strategy or design pass.
+  const decoration = element.decoration;
+  const radiusMd = theme.radius?.md ?? 8;
+  // Convert radius (px) to a 0..1 fraction of the shorter side as PptxGenJS
+  // expects for `rectRadius`.
+  const shorter = Math.min(frame.w, frame.h);
+  const radiusFraction = shorter > 0 ? Math.min(0.5, radiusMd / 96 / shorter) : 0;
+
+  if (decoration?.kind === "card") {
+    options.fill = { color: normalizeHexColor(theme.colors.surface) };
+    options.line = {
+      color: normalizeHexColor(decoration.color ?? theme.colors.textSecondary),
+      width: 0.25,
+    };
+    options.rectRadius = radiusFraction;
+  } else if (decoration?.kind === "accent-bar") {
+    options.line = {
+      color: normalizeHexColor(decoration.color ?? theme.colors.accent),
+      width: 0,
+    };
+    options.fill = { color: normalizeHexColor(theme.colors.background), transparency: 100 };
+  } else if (element.role === "callout") {
     options.fill = { color: normalizeHexColor(theme.colors.surface) };
     options.line = {
       color: normalizeHexColor(theme.colors.secondary ?? theme.colors.textSecondary),
       width: 0.5,
     };
+    options.rectRadius = radiusFraction;
   }
 
   slide.addText(textProps, options);
+}
+
+function renderShapeElement(
+  slide: MinimalPptxSlide,
+  element: ShapeElementIR,
+  slideSize: SlideSize,
+  theme: ThemeSpec,
+): void {
+  const frame = toInchFrame(element.frame, slideSize);
+  const fill = element.style.fill ?? theme.colors.surface;
+  const stroke = element.style.stroke ?? theme.colors.textSecondary;
+  const strokeWidth = element.style.strokeWidth ?? 1;
+
+  const shapeName = mapShapeType(element.shapeType);
+  const opts: Record<string, unknown> = {
+    x: frame.x,
+    y: frame.y,
+    w: frame.w,
+    h: frame.h,
+    fill: { color: normalizeHexColor(fill) },
+    line: { color: normalizeHexColor(stroke), width: strokeWidth },
+  };
+  if (element.shapeType === "round_rect") {
+    const shorter = Math.min(frame.w, frame.h);
+    const radius = element.style.radius ?? theme.radius?.md ?? 8;
+    opts.rectRadius = shorter > 0 ? Math.min(0.5, radius / 96 / shorter) : 0;
+  }
+  slide.addShape?.(shapeName, opts);
+}
+
+function mapShapeType(
+  shapeType: ShapeElementIR["shapeType"],
+): "rect" | "roundRect" | "ellipse" | "line" | "rightArrow" {
+  switch (shapeType) {
+    case "round_rect":
+      return "roundRect";
+    case "ellipse":
+      return "ellipse";
+    case "line":
+      return "line";
+    case "arrow":
+      return "rightArrow";
+    default:
+      return "rect";
+  }
 }
 
 function richTextToPptxProps(
@@ -319,4 +411,246 @@ async function resolveImageSource(uri: string): Promise<{ data: string } | { pat
   await access(resolvedPath);
 
   return { path: resolvedPath };
+}
+
+// ---------------------------------------------------------------------------
+// Chart rendering
+// ---------------------------------------------------------------------------
+
+function renderChartElement(
+  slide: MinimalPptxSlide,
+  element: ChartElementIR,
+  slideSize: SlideSize,
+  theme: ThemeSpec,
+): void {
+  if (!slide.addChart) return;
+  const frame = toInchFrame(element.frame, slideSize);
+  const palette = (element.style?.palette ?? theme.colors.chartPalette ?? []).map(
+    normalizeHexColor,
+  );
+  const showLegend = element.style?.showLegend !== false;
+  const showGrid = element.style?.showGrid !== false;
+
+  const chartType = mapChartType(element.chartType);
+  const labels = element.data.categories ?? [];
+  const data = element.data.series.map((s) => ({
+    name: s.name,
+    labels,
+    values: s.values,
+  }));
+
+  const opts: Record<string, unknown> = {
+    x: frame.x,
+    y: frame.y,
+    w: frame.w,
+    h: frame.h,
+    showLegend,
+    legendPos: "b",
+    showCatAxisTitle: false,
+    showValAxisTitle: false,
+    catAxisLabelColor: normalizeHexColor(theme.colors.textSecondary),
+    valAxisLabelColor: normalizeHexColor(theme.colors.textSecondary),
+    valGridLine: showGrid
+      ? { style: "solid", size: 0.5, color: normalizeHexColor(theme.colors.textSecondary) }
+      : { style: "none" },
+  };
+  if (palette.length > 0) {
+    opts.chartColors = palette;
+  }
+  slide.addChart(chartType, data, opts);
+}
+
+function mapChartType(chartType: ChartElementIR["chartType"]): string {
+  switch (chartType) {
+    case "line":
+      return "line";
+    case "area":
+      return "area";
+    case "pie":
+      return "pie";
+    case "scatter":
+      return "scatter";
+    case "combo":
+      return "bar";
+    default:
+      return "bar";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Diagram rendering — laid out via the same algorithm as the HTML exporter.
+// ---------------------------------------------------------------------------
+
+function renderDiagramElement(
+  slide: MinimalPptxSlide,
+  element: DiagramElementIR,
+  slideSize: SlideSize,
+  theme: ThemeSpec,
+): void {
+  if (!slide.addShape) return;
+  const frame = toInchFrame(element.frame, slideSize);
+
+  // Compute layout in pixel space, then convert each node's box to inches
+  // relative to the diagram's frame origin.
+  const layout = layoutDiagramNodesPx(element);
+  if (layout.length === 0) return;
+
+  const pxToInchX = (px: number) => (px / element.frame.width) * frame.w;
+  const pxToInchY = (px: number) => (px / element.frame.height) * frame.h;
+
+  const fillColor = normalizeHexColor(element.style?.nodeFill ?? theme.colors.surface);
+  const strokeColor = normalizeHexColor(theme.colors.primary);
+  const edgeColor = normalizeHexColor(element.style?.edgeColor ?? theme.colors.textSecondary);
+  const textColor = normalizeHexColor(element.style?.textStyle?.color ?? theme.colors.textPrimary);
+
+  const nodeMap = new Map(layout.map((n) => [n.id, n]));
+
+  // Edges first so nodes overlay them.
+  const edges = element.edges ?? [];
+  const implicitEdges =
+    edges.length === 0 && isSequenceDiagramKind(element.diagramType)
+      ? layout.slice(0, -1).map((from, i) => ({
+          from: from.id,
+          to: layout[i + 1].id,
+        }))
+      : [];
+
+  for (const edge of [...edges, ...implicitEdges]) {
+    const from = nodeMap.get(edge.from);
+    const to = nodeMap.get(edge.to);
+    if (!from || !to) continue;
+    const path = computeEdgePathPx(from, to);
+    const x1 = frame.x + pxToInchX(path.x1);
+    const y1 = frame.y + pxToInchY(path.y1);
+    const x2 = frame.x + pxToInchX(path.x2);
+    const y2 = frame.y + pxToInchY(path.y2);
+    slide.addShape("line", {
+      x: Math.min(x1, x2),
+      y: Math.min(y1, y2),
+      w: Math.max(0.05, Math.abs(x2 - x1)),
+      h: Math.max(0.05, Math.abs(y2 - y1)),
+      flipH: x2 < x1,
+      flipV: y2 < y1,
+      line: { color: edgeColor, width: 1, endArrowType: "triangle" },
+    });
+  }
+
+  for (const node of layout) {
+    const x = frame.x + pxToInchX(node.cx - node.w / 2);
+    const y = frame.y + pxToInchY(node.cy - node.h / 2);
+    const w = pxToInchX(node.w);
+    const h = pxToInchY(node.h);
+    const radius = Math.min(0.5, theme.radius.md / 96 / Math.min(w, h));
+    slide.addShape("roundRect", {
+      x,
+      y,
+      w,
+      h,
+      fill: { color: fillColor },
+      line: { color: strokeColor, width: 1 },
+      rectRadius: radius,
+    });
+    slide.addText([{ text: node.label }], {
+      x,
+      y,
+      w,
+      h,
+      align: "center",
+      valign: "middle",
+      fontSize: 11,
+      bold: true,
+      color: textColor,
+      shrinkText: true,
+    });
+  }
+}
+
+type DiagramLaidOutNode = {
+  id: string;
+  label: string;
+  cx: number;
+  cy: number;
+  w: number;
+  h: number;
+};
+
+function isSequenceDiagramKind(kind: DiagramElementIR["diagramType"]): boolean {
+  return kind === "flowchart" || kind === "timeline" || kind === "funnel" || kind === "layered";
+}
+
+function layoutDiagramNodesPx(element: DiagramElementIR): DiagramLaidOutNode[] {
+  const w = element.frame.width;
+  const h = element.frame.height;
+  const nodes = element.nodes;
+  if (nodes.length === 0) return [];
+
+  const padding = 16;
+  const nodeH = Math.min(60, (h - padding * 2) * 0.4);
+
+  if (element.diagramType === "cycle") {
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) / 2 - Math.max(60, nodeH);
+    const nodeW = Math.min(140, (Math.PI * radius) / Math.max(1, nodes.length));
+    return nodes.map((node, i) => {
+      const angle = -Math.PI / 2 + (i / nodes.length) * Math.PI * 2;
+      return {
+        id: node.id,
+        label: node.label,
+        cx: cx + radius * Math.cos(angle),
+        cy: cy + radius * Math.sin(angle),
+        w: nodeW,
+        h: nodeH,
+      };
+    });
+  }
+
+  if (element.diagramType === "matrix") {
+    const cols = Math.ceil(Math.sqrt(nodes.length));
+    const rows = Math.ceil(nodes.length / cols);
+    const cellW = (w - padding * 2) / cols;
+    const cellH = (h - padding * 2) / rows;
+    const nodeW = Math.min(cellW * 0.85, 180);
+    const nodeHGrid = Math.min(cellH * 0.7, nodeH);
+    return nodes.map((node, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      return {
+        id: node.id,
+        label: node.label,
+        cx: padding + col * cellW + cellW / 2,
+        cy: padding + row * cellH + cellH / 2,
+        w: nodeW,
+        h: nodeHGrid,
+      };
+    });
+  }
+
+  const slot = (w - padding * 2) / nodes.length;
+  const nodeW = Math.min(160, slot * 0.85);
+  const cy = h / 2;
+  return nodes.map((node, i) => ({
+    id: node.id,
+    label: node.label,
+    cx: padding + slot * (i + 0.5),
+    cy,
+    w: nodeW,
+    h: nodeH,
+  }));
+}
+
+function computeEdgePathPx(from: DiagramLaidOutNode, to: DiagramLaidOutNode) {
+  const dx = to.cx - from.cx;
+  const dy = to.cy - from.cy;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const fromOffset = Math.min(from.w, from.h) / 2;
+  const toOffset = Math.min(to.w, to.h) / 2 + 4;
+  return {
+    x1: from.cx + ux * fromOffset,
+    y1: from.cy + uy * fromOffset,
+    x2: to.cx - ux * toOffset,
+    y2: to.cy - uy * toOffset,
+  };
 }

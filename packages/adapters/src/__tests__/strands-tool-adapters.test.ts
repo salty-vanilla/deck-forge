@@ -12,7 +12,7 @@ describe("createPresentationTools", () => {
   it("returns Strands-compatible tools", () => {
     const tools = createPresentationTools();
 
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(23);
   });
 
   it("each tool has name, description and handler", () => {
