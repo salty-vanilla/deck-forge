@@ -107,18 +107,24 @@ export function defaultFrameForRole(
 
     case "callout":
       // Bottom strip of the body zone.
-      return { x: DEFAULT_PADDING, y: bodyY + mainHeight, width: contentWidth, height: calloutHeight };
+      return {
+        x: DEFAULT_PADDING,
+        y: bodyY + mainHeight,
+        width: contentWidth,
+        height: calloutHeight,
+      };
 
     case "sidebar":
       // Narrow left panel (25% of content width).
-      return { x: DEFAULT_PADDING, y: bodyY, width: Math.round(contentWidth * 0.25), height: bodyHeight };
+      return {
+        x: DEFAULT_PADDING,
+        y: bodyY,
+        width: Math.round(contentWidth * 0.25),
+        height: bodyHeight,
+      };
 
     case "footer":
       return { x: DEFAULT_PADDING, y: footerY, width: contentWidth, height: footerHeight };
-
-    case "chart":
-    case "table":
-    case "body":
     default:
       // Left 60% body zone (safe default that leaves room for a visual region).
       return { x: DEFAULT_PADDING, y: bodyY, width: bodyWidth, height: mainHeight };

@@ -315,8 +315,7 @@ function buildElements(
 
     if (block.type === "metric") {
       const metricBlock = block as MetricBlock;
-      const arrow =
-        metricBlock.trend === "up" ? " ↑" : metricBlock.trend === "down" ? " ↓" : "";
+      const arrow = metricBlock.trend === "up" ? " ↑" : metricBlock.trend === "down" ? " ↓" : "";
       const valueText = metricBlock.unit
         ? `${metricBlock.value} ${metricBlock.unit}`
         : metricBlock.value;
@@ -600,8 +599,18 @@ const MOOD_PALETTES: Record<
 > = {
   energetic: { primary: "#F59E0B", secondary: "#0EA5E9", accent: "#EF4444", background: "#FFFBEB" },
   calm: { primary: "#0EA5E9", secondary: "#A5F3FC", accent: "#6366F1", background: "#F0F9FF" },
-  trustworthy: { primary: "#1D4ED8", secondary: "#0EA5E9", accent: "#14B8A6", background: "#FFFFFF" },
-  futuristic: { primary: "#6366F1", secondary: "#8B5CF6", accent: "#22D3EE", background: "#0F172A" },
+  trustworthy: {
+    primary: "#1D4ED8",
+    secondary: "#0EA5E9",
+    accent: "#14B8A6",
+    background: "#FFFFFF",
+  },
+  futuristic: {
+    primary: "#6366F1",
+    secondary: "#8B5CF6",
+    accent: "#22D3EE",
+    background: "#0F172A",
+  },
   premium: { primary: "#0F172A", secondary: "#334155", accent: "#D4AF37", background: "#F8FAFC" },
   practical: { primary: "#475569", secondary: "#94A3B8", accent: "#0EA5E9", background: "#FFFFFF" },
 };
