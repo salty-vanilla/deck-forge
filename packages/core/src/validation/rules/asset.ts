@@ -1,5 +1,5 @@
-import type { PresentationIR, ValidationIssue } from "#/index.js";
-import type { IssueFactory } from "#/validation/types.js";
+import type { PresentationIR, ValidationIssue } from "#src/index.js";
+import type { IssueFactory } from "#src/validation/types.js";
 
 /**
  * Validates asset registry integrity:
@@ -19,6 +19,17 @@ export function validateAssets(
     if (!asset.uri || asset.uri.trim() === "") {
       issues.push(
         factory.issue("error", "asset", `Asset URI is empty: ${asset.id}`, `asset/${asset.id}`),
+      );
+    }
+
+    if (asset.uri.startsWith("placeholder://")) {
+      issues.push(
+        factory.issue(
+          "warning",
+          "asset",
+          `Placeholder asset remains unresolved: ${asset.id}`,
+          `asset/${asset.id}`,
+        ),
       );
     }
 

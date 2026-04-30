@@ -1,9 +1,10 @@
-import type { ToolDefinition } from "#/types.js";
+import type { ToolDefinition } from "#src/types.js";
 
 export const presentationTools: ToolDefinition[] = [
   {
     name: "presentation_create_spec",
-    description: "Create a presentation brief from a user request.",
+    description:
+      "Create a scaffold presentation brief from a user request. For production decks, an Agent should provide grounded createArtifacts.",
     inputSchema: {
       type: "object",
       properties: {
@@ -19,7 +20,8 @@ export const presentationTools: ToolDefinition[] = [
   },
   {
     name: "presentation_generate_deck_plan",
-    description: "Generate a deck plan from a presentation brief.",
+    description:
+      "Generate a scaffold deck plan from a presentation brief. This is a helper, not a substitute for Agent planning.",
     inputSchema: {
       type: "object",
       properties: {
@@ -30,7 +32,8 @@ export const presentationTools: ToolDefinition[] = [
   },
   {
     name: "presentation_generate_slide_specs",
-    description: "Generate slide specs from brief and deck plan.",
+    description:
+      "Generate scaffold slide specs from brief and deck plan. For production decks, prefer Agent-authored slideSpecs.",
     inputSchema: {
       type: "object",
       properties: {
@@ -84,6 +87,7 @@ export const presentationTools: ToolDefinition[] = [
         brief: { type: "object" },
         slideSpecs: { type: "array", items: { type: "object" } },
         acquisitionMode: { type: "string", enum: ["generate", "retrieve", "auto"] },
+        imageProvider: { type: "string", enum: ["pexels", "unsplash", "pixabay"] },
       },
       required: ["brief", "slideSpecs"],
     },
@@ -128,6 +132,7 @@ export const presentationTools: ToolDefinition[] = [
         presentation: { type: "object" },
         report: { type: "object" },
         goal: { type: "string" },
+        packet: { type: "object" },
       },
       required: ["presentation"],
     },
@@ -194,6 +199,25 @@ export const presentationTools: ToolDefinition[] = [
     },
   },
   {
+    name: "presentation_build_review_packet",
+    description:
+      "Build a standardized review packet for an Agent/LLM/VLM reviewer, optionally including rendered slide images.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        userRequest: { type: "string" },
+        presentation: { type: "object" },
+        validationReport: { type: "object" },
+        grounding: { type: "object" },
+        renderImages: { type: "boolean" },
+        slideIds: { type: "array", items: { type: "string" } },
+        imageFormat: { type: "string", enum: ["png", "jpeg"] },
+        imageScale: { type: "number" },
+      },
+      required: ["userRequest", "presentation"],
+    },
+  },
+  {
     name: "presentation_export",
     description: "Export presentation to json/pptx/html/pdf.",
     inputSchema: {
@@ -206,6 +230,23 @@ export const presentationTools: ToolDefinition[] = [
         allowOutsideWorkspace: { type: "boolean" },
       },
       required: ["presentation", "format"],
+    },
+  },
+  {
+    name: "presentation_export_slide_images",
+    description: "Render presentation slides to PNG/JPEG images for Agent/LLM/VLM review.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        presentation: { type: "object" },
+        format: { type: "string", enum: ["png", "jpeg"] },
+        slideIds: { type: "array", items: { type: "string" } },
+        scale: { type: "number" },
+        outputDir: { type: "string" },
+        workspaceRoot: { type: "string" },
+        allowOutsideWorkspace: { type: "boolean" },
+      },
+      required: ["presentation"],
     },
   },
   {

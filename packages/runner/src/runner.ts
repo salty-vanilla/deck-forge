@@ -1,25 +1,22 @@
 import type {
-  PresentationBrief,
   PresentationIR,
   PresentationOperation,
+  PresentationReviewPacket,
   PresentationRuntime,
-  SlideSpec,
   ValidationReport,
 } from "@deck-forge/core";
-import { autoFixPresentation } from "@deck-forge/core";
+import { autoFixPresentation, buildReviewPacket } from "@deck-forge/core";
 import {
   applyPresentationOperationsHandler,
   buildPresentationIrHandler,
   componentPreflightHandler,
   componentSynthesizeHandler,
-  createPresentationSpecHandler,
   exportPresentationHandler,
   generateAssetPlanHandler,
-  generateDeckPlanHandler,
-  generateSlideSpecsHandler,
   inspectPresentationHandler,
   planPresentationOperationsHandler,
   reviewPresentationHandler,
+  validateAgentCreateArtifacts,
   validatePresentationHandler,
 } from "@deck-forge/tools";
 import type {
@@ -33,6 +30,7 @@ export type DeckForgeRunnerOptions = {
   runtime: PresentationRuntime;
   intentParser?: IntentParser;
   revisionPolicy?: "none" | "validation_only" | "ai_review";
+  reviewTrigger?: "errors" | "warnings" | "always";
   maxRevisionLoops?: number;
   reviewer?: PresentationReviewer;
   operationPlanner?: PresentationOperationPlanner;
@@ -47,6 +45,7 @@ export type DeckForgeRunInput = {
   outputPath?: string;
   includeTrace?: boolean;
   acquisitionMode?: "generate" | "retrieve" | "auto";
+  imageProvider?: "pexels" | "unsplash" | "pixabay";
   presentation?: unknown;
   operations?: unknown[];
   inspectQuery?: unknown;
@@ -54,9 +53,7 @@ export type DeckForgeRunInput = {
 
 type RunnerStep =
   | "parse_request"
-  | "create_spec"
-  | "generate_deck_plan"
-  | "generate_slide_specs"
+  | "validate_agent_artifacts"
   | "component_preflight"
   | "component_synthesize"
   | "generate_asset_plan"
@@ -65,6 +62,7 @@ type RunnerStep =
   | "apply_operations"
   | "validate"
   | "auto_fix"
+  | "build_review_packet"
   | "review"
   | "plan_operations"
   | "revalidate"
@@ -156,6 +154,7 @@ export class DeckForgeRunner {
     const shouldAutoFix = payload.autoFix ?? true;
     const exportFormat = payload.exportFormat ?? "json";
     const revisionPolicy = this.options.revisionPolicy ?? "validation_only";
+    const reviewTrigger = this.options.reviewTrigger ?? "errors";
     const maxRevisionLoops = Math.min(5, Math.max(0, this.options.maxRevisionLoops ?? 2));
     const appliedPolicy = resolvePresentationPolicy(payload.goal, payload.acquisitionMode);
 
@@ -164,25 +163,20 @@ export class DeckForgeRunner {
         const structuredIntent = await this.runStep("parse_request", trace, async () =>
           parseCreateIntent(this.options.intentParser, payload.goal),
         );
-        const { brief: createdBrief } = await this.runStep("create_spec", trace, async () =>
-          createPresentationSpecHandler({
-            userRequest: payload.goal,
-            audience: structuredIntent.audience,
-            goal: structuredIntent.goal,
-            slideCount: structuredIntent.slideCount,
-            tone: structuredIntent.tone,
-          }),
-        );
-        const brief = applyPolicyToBrief(createdBrief, appliedPolicy);
-        const { deckPlan } = await this.runStep("generate_deck_plan", trace, async () =>
-          generateDeckPlanHandler({ brief }),
-        );
-        const { slideSpecs: generatedSlideSpecs } = await this.runStep(
-          "generate_slide_specs",
+        const {
+          brief,
+          deckPlan,
+          slideSpecs,
+          assetSpecs: providedAssetSpecs,
+        } = await this.runStep(
+          "validate_agent_artifacts",
           trace,
-          async () => generateSlideSpecsHandler({ brief, deckPlan }),
+          async () =>
+            validateAgentCreateArtifacts({
+              userRequest: payload.goal,
+              intent: structuredIntent,
+            }).artifacts,
         );
-        const slideSpecs = applyPolicyToSlideSpecs(generatedSlideSpecs, appliedPolicy);
         const componentPreflight = await this.runStep("component_preflight", trace, async () =>
           componentPreflightHandler({ slideSpecs }),
         );
@@ -192,13 +186,19 @@ export class DeckForgeRunner {
                 componentSynthesizeHandler({ slideSpecs }),
               )
             : { created: [] };
-        const { assetSpecs } = await this.runStep("generate_asset_plan", trace, async () =>
-          generateAssetPlanHandler({
-            brief,
-            slideSpecs,
-            acquisitionMode: toAcquisitionMode(appliedPolicy.visualPreset),
-          }),
-        );
+        const assetSpecs =
+          providedAssetSpecs ??
+          (
+            await this.runStep("generate_asset_plan", trace, async () =>
+              generateAssetPlanHandler({
+                brief,
+                slideSpecs,
+                acquisitionMode:
+                  payload.acquisitionMode ?? toAcquisitionMode(appliedPolicy.visualPreset),
+                imageProvider: payload.imageProvider ?? "pexels",
+              }),
+            )
+          ).assetSpecs;
         let { presentation } = await this.runStep("build_ir", trace, async () =>
           buildPresentationIrHandler({
             brief,
@@ -211,9 +211,11 @@ export class DeckForgeRunner {
         const revision = await this.runRevisionLoop({
           presentation,
           payload,
+          grounding: structuredIntent.grounding,
           validationLevel,
           shouldAutoFix,
           revisionPolicy,
+          reviewTrigger,
           maxRevisionLoops,
           trace,
         });
@@ -288,9 +290,11 @@ export class DeckForgeRunner {
       const revision = await this.runRevisionLoop({
         presentation: updatedPresentation,
         payload,
+        grounding: structuredIntent.grounding,
         validationLevel,
         shouldAutoFix,
         revisionPolicy,
+        reviewTrigger,
         maxRevisionLoops,
         trace,
       });
@@ -326,7 +330,7 @@ export class DeckForgeRunner {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({
         category: classifyError(message),
-        step: trace[trace.length - 1]?.step ?? "create_spec",
+        step: trace[trace.length - 1]?.step ?? "parse_request",
         message,
       });
       return {
@@ -343,9 +347,11 @@ export class DeckForgeRunner {
   private async runRevisionLoop(input: {
     presentation: PresentationIR;
     payload: DeckForgeRunInput;
+    grounding?: StructuredIntent["grounding"];
     validationLevel: "basic" | "strict" | "export";
     shouldAutoFix: boolean;
     revisionPolicy: "none" | "validation_only" | "ai_review";
+    reviewTrigger?: "errors" | "warnings" | "always";
     maxRevisionLoops: number;
     trace: RunnerTrace[];
   }): Promise<{
@@ -399,15 +405,26 @@ export class DeckForgeRunner {
     }
 
     if (input.revisionPolicy === "ai_review") {
-      while (loopsExecuted < input.maxRevisionLoops && report.status === "failed") {
+      const reviewTrigger = input.reviewTrigger ?? this.options.reviewTrigger ?? "errors";
+      while (loopsExecuted < input.maxRevisionLoops && shouldRunAiReview(report, reviewTrigger)) {
         loopsExecuted += 1;
         const prevErrorCount = report.summary.errorCount;
         const prevIssueCount = report.issues.length;
+        const packet = await this.runStep("build_review_packet", input.trace, async () =>
+          buildRunnerReviewPacket({
+            runtime: this.options.runtime,
+            presentation,
+            payload: input.payload,
+            report,
+            grounding: input.grounding,
+          }),
+        );
         const reviewOutput = await this.runStep("review", input.trace, async () =>
           reviewPresentationHandler({
             presentation,
             report,
             goal: input.payload.goal,
+            packet,
             reviewer: this.options.reviewer,
           }),
         );
@@ -492,7 +509,7 @@ export class DeckForgeRunner {
     }
 
     if (
-      report.status !== "passed" &&
+      shouldRunAiReview(report, input.reviewTrigger ?? this.options.reviewTrigger ?? "errors") &&
       input.revisionPolicy !== "none" &&
       loopsExecuted >= input.maxRevisionLoops &&
       input.maxRevisionLoops > 0
@@ -583,6 +600,44 @@ function assertIntentConfidence(intent: StructuredIntent): void {
   }
 }
 
+function shouldRunAiReview(
+  report: ValidationReport,
+  trigger: "errors" | "warnings" | "always",
+): boolean {
+  if (trigger === "always") {
+    return true;
+  }
+  if (trigger === "warnings") {
+    return report.summary.errorCount > 0 || report.summary.warningCount > 0;
+  }
+  return report.summary.errorCount > 0;
+}
+
+async function buildRunnerReviewPacket(input: {
+  runtime: PresentationRuntime;
+  presentation: PresentationIR;
+  payload: DeckForgeRunInput;
+  report: ValidationReport;
+  grounding?: StructuredIntent["grounding"];
+}): Promise<PresentationReviewPacket> {
+  const options = {
+    userRequest: input.payload.goal,
+    validationReport: input.report,
+    grounding: input.grounding,
+    renderImages: true,
+    imageFormat: "png" as const,
+  };
+
+  if (input.runtime.buildReviewPacket) {
+    return input.runtime.buildReviewPacket(input.presentation, options);
+  }
+
+  return buildReviewPacket({
+    ...options,
+    presentation: input.presentation,
+  });
+}
+
 function resolvePresentationPolicy(
   goal: string,
   acquisitionMode?: "generate" | "retrieve" | "auto",
@@ -634,63 +689,6 @@ function toAcquisitionMode(
     return "generate";
   }
   return "auto";
-}
-
-function applyPolicyToBrief(
-  brief: PresentationBrief,
-  policy: PresentationPolicy,
-): PresentationBrief {
-  const clone = structuredClone(brief);
-  const tone = clone.tone;
-  tone.formality = "executive";
-  tone.energy = "confident";
-  tone.technicalDepth = policy.visualPreset === "data_heavy" ? "high" : "medium";
-  tone.styleKeywords = ["structured", "concise", "decision-oriented"];
-  clone.tone = tone;
-
-  const visualDirection = clone.visualDirection;
-  visualDirection.style = policy.visualPreset === "data_heavy" ? "technical" : "corporate";
-  visualDirection.mood = "trustworthy";
-  visualDirection.composition = "clear hierarchy with whitespace";
-  visualDirection.colorMood = "high contrast and clean";
-  clone.visualDirection = visualDirection;
-
-  return clone;
-}
-
-function applyPolicyToSlideSpecs(slideSpecs: SlideSpec[], policy: PresentationPolicy): SlideSpec[] {
-  if (policy.visualPreset === "balanced") {
-    return slideSpecs;
-  }
-
-  return slideSpecs.map((slide, index) => {
-    const next = structuredClone(slide);
-    if (policy.visualPreset === "visual_heavy") {
-      if (next.layout.type === "single_column" && index > 0) {
-        next.layout = { type: "text_left_image_right", density: "low", emphasis: "visual" };
-      }
-      return next;
-    }
-
-    const content = [...next.content];
-    const hasChart = content.some((block) => block.type === "chart");
-    if (!hasChart) {
-      const slideId = next.id;
-      content.push({
-        id: `cb-${slideId}-chart`,
-        type: "chart",
-        chartType: "bar",
-        title: "Key metric trend",
-        data: {
-          categories: ["Current", "Target"],
-          series: [{ name: "Value", values: [70, 85] }],
-        },
-        encoding: { x: "category", y: "value" },
-      });
-      next.content = content;
-    }
-    return next;
-  });
 }
 
 function classifyError(message: string): RunnerErrorCategory {

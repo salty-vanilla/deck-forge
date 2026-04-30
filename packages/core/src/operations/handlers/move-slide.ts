@@ -1,6 +1,6 @@
-import type { PresentationIR } from "#/index.js";
-import type { MoveSlideOperation } from "#/operations/types.js";
-import { findSlide, reindexSlides } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import type { MoveSlideOperation } from "#src/operations/types.js";
+import { findSlide, reindexSlides } from "#src/operations/utils.js";
 
 export function moveSlide(presentation: PresentationIR, operation: MoveSlideOperation): void {
   findSlide(presentation, operation.slideId); // throws if not found

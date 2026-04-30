@@ -1,6 +1,6 @@
 import { generateImageFromAssetSpec } from "@deck-forge/core";
 
-import type { GenerateImageInput, GenerateImageOutput } from "#/types.js";
+import type { GenerateImageInput, GenerateImageOutput } from "#src/types.js";
 
 export async function generateImageHandler(
   input: GenerateImageInput,

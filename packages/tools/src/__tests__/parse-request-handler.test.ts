@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRequestHandler, setIntentParser } from "#/handlers/parse-request-handler.js";
+import { parseRequestHandler, setIntentParser } from "#src/handlers/parse-request-handler.js";
 
 describe("parseRequestHandler", () => {
   it("returns structured intent from configured parser", async () => {

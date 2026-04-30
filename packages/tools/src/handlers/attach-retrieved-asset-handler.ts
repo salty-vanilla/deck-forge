@@ -1,6 +1,6 @@
 import { retrieveImageFromAssetSpec } from "@deck-forge/core";
 
-import type { AttachRetrievedAssetInput, AttachRetrievedAssetOutput } from "#/types.js";
+import type { AttachRetrievedAssetInput, AttachRetrievedAssetOutput } from "#src/types.js";
 
 export async function attachRetrievedAssetHandler(
   input: AttachRetrievedAssetInput,

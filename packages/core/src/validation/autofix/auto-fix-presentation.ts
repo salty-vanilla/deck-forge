@@ -1,4 +1,4 @@
-import type { AutoFixAction, PresentationIR, ValidationReport } from "#/index.js";
+import type { AutoFixAction, PresentationIR, ValidationReport } from "#src/index.js";
 
 const MIN_FONT_SIZE = 12;
 const PREFERRED_FONT_SIZE = 14;

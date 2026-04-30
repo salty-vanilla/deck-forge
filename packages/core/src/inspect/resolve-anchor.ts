@@ -1,5 +1,5 @@
-import type { PresentationIR } from "#/index.js";
-import type { ResolvedAnchor } from "#/inspect/types.js";
+import type { PresentationIR } from "#src/index.js";
+import type { ResolvedAnchor } from "#src/inspect/types.js";
 
 export function resolveAnchor(presentation: PresentationIR, anchorId: string): ResolvedAnchor {
   const parts = anchorId.split("/");

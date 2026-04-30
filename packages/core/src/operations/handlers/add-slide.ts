@@ -1,6 +1,6 @@
-import type { PresentationIR } from "#/index.js";
-import type { AddSlideOperation } from "#/operations/types.js";
-import { createSlide, reindexSlides } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import type { AddSlideOperation } from "#src/operations/types.js";
+import { createSlide, reindexSlides } from "#src/operations/utils.js";
 
 export function addSlide(presentation: PresentationIR, operation: AddSlideOperation): void {
   const nextIndex = clampIndex(

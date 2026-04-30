@@ -1,4 +1,4 @@
-import type { IntentParser, ParseRequestInput, ParseRequestOutput } from "#/types.js";
+import type { IntentParser, ParseRequestInput, ParseRequestOutput } from "#src/types.js";
 
 let intentParser: IntentParser | undefined;
 

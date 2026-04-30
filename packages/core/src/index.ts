@@ -1,11 +1,21 @@
-export { JsonExporter } from "#/exporters/json/json-exporter.js";
-export { HtmlExporter } from "#/exporters/html/html-exporter.js";
-export { PdfExporter } from "#/exporters/pdf/pdf-exporter.js";
-export { PptxExporter } from "#/exporters/pptx/pptx-exporter.js";
-export { inspectPresentation } from "#/inspect/inspect-presentation.js";
-export { resolveAnchor } from "#/inspect/resolve-anchor.js";
-export type { InspectQuery, InspectResult, ResolvedAnchor } from "#/inspect/types.js";
-export { applyOperations } from "#/operations/apply-operations.js";
+export { JsonExporter } from "#src/exporters/json/json-exporter.js";
+export { HtmlExporter } from "#src/exporters/html/html-exporter.js";
+export { PdfExporter } from "#src/exporters/pdf/pdf-exporter.js";
+export { PptxExporter } from "#src/exporters/pptx/pptx-exporter.js";
+export { inspectPresentation } from "#src/inspect/inspect-presentation.js";
+export { resolveAnchor } from "#src/inspect/resolve-anchor.js";
+export type { InspectQuery, InspectResult, ResolvedAnchor } from "#src/inspect/types.js";
+export { buildReviewPacket } from "#src/review/build-review-packet.js";
+export { HtmlSlideImageRenderer } from "#src/review/html-slide-image-renderer.js";
+export type {
+  BuildReviewPacketOptions,
+  PresentationReviewPacket,
+  SlideImage,
+  SlideImageExportResult,
+  SlideImageRenderInput,
+  SlideImageRenderer,
+} from "#src/review/types.js";
+export { applyOperations } from "#src/operations/apply-operations.js";
 export type {
   AddChartOperation,
   AddImageOperation,
@@ -21,16 +31,16 @@ export type {
   SetSlideLayoutOperation,
   UpdateChartDataOperation,
   UpdateTextOperation,
-} from "#/operations/types.js";
+} from "#src/operations/types.js";
 export {
   deserializePresentation,
   loadPresentationFromFile,
   savePresentationToFile,
   serializePresentation,
-} from "#/json.js";
-export { validatePresentation } from "#/validation/validate-presentation.js";
-export { autoFixPresentation } from "#/validation/autofix/auto-fix-presentation.js";
-export { NoopImageGenerator } from "#/assets/generators/noop-image-generator.js";
+} from "#src/json.js";
+export { validatePresentation } from "#src/validation/validate-presentation.js";
+export { autoFixPresentation } from "#src/validation/autofix/auto-fix-presentation.js";
+export { NoopImageGenerator } from "#src/assets/generators/noop-image-generator.js";
 export {
   BedrockImageGenerator,
   LocalFileImageGenerator,
@@ -39,40 +49,40 @@ export {
   retrieveImageFromAssetSpec,
   searchImageCandidates,
   materializeGeneratedAssets,
-} from "#/assets/image-runtime.js";
+} from "#src/assets/image-runtime.js";
 export type {
   GenerateImageFromAssetSpecOptions,
   MaterializeGeneratedAssetsOptions,
   RetrieveImageAssetOptions,
   SearchImageCandidatesOptions,
-} from "#/assets/image-runtime.js";
-export type { ValidateLevel, ValidateOptions, ValidateResult } from "#/validation/types.js";
+} from "#src/assets/image-runtime.js";
+export type { ValidateLevel, ValidateOptions, ValidateResult } from "#src/validation/types.js";
 export {
   LocalPresentationRuntime,
   createLocalRuntime,
-} from "#/runtime/local-presentation-runtime.js";
+} from "#src/runtime/local-presentation-runtime.js";
 export {
   PATH_OUTSIDE_WORKSPACE,
   assertPathAllowed,
   resolveSafetyOptions,
-} from "#/runtime/path-policy.js";
+} from "#src/runtime/path-policy.js";
 export {
   createPresentationSpec,
   generateAssetPlan,
   generateDeckPlan,
   generateSlideSpecs,
-} from "#/spec-generation/generate-spec-artifacts.js";
-export { buildPresentationIr } from "#/builders/build-presentation-ir.js";
+} from "#src/spec-generation/generate-spec-artifacts.js";
+export { buildPresentationIr } from "#src/builders/build-presentation-ir.js";
 export {
   listComponents,
   preflightComponents,
   synthesizeComponents,
-} from "#/components/component-catalog.js";
+} from "#src/components/component-catalog.js";
 export type {
   BuildPresentationIrInput,
   BuildPresentationIrOutput,
-} from "#/builders/build-presentation-ir.js";
-export type { ComponentCatalogOptions } from "#/components/component-catalog.js";
+} from "#src/builders/build-presentation-ir.js";
+export type { ComponentCatalogOptions } from "#src/components/component-catalog.js";
 export type {
   CreatePresentationSpecInput,
   CreatePresentationSpecOutput,
@@ -82,14 +92,16 @@ export type {
   GenerateDeckPlanOutput,
   GenerateSlideSpecsInput,
   GenerateSlideSpecsOutput,
-} from "#/spec-generation/types.js";
+} from "#src/spec-generation/types.js";
 export type {
   CreatePresentationInput,
   LocalPresentationRuntimeOptions,
   PresentationRuntime,
+  PresentationReviewPacketBuilder,
   PresentationValidator,
-} from "#/runtime/types.js";
-export type { RuntimeSafetyOptions } from "#/runtime/path-policy.js";
+  RuntimeReviewPacketOptions,
+} from "#src/runtime/types.js";
+export type { RuntimeSafetyOptions } from "#src/runtime/path-policy.js";
 
 export type Id = string;
 export type ISODateTime = string;

@@ -1,4 +1,4 @@
-import type { GeneratedAsset, ImageGenerationRequest, ImageGenerator } from "#/index.js";
+import type { GeneratedAsset, ImageGenerationRequest, ImageGenerator } from "#src/index.js";
 
 /**
  * A no-op ImageGenerator that returns a stub asset without any real generation.

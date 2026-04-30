@@ -1,6 +1,6 @@
-import type { PresentationIR } from "#/index.js";
-import type { UpdateTextOperation } from "#/operations/types.js";
-import { findSlide, toRichText } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import type { UpdateTextOperation } from "#src/operations/types.js";
+import { findSlide, toRichText } from "#src/operations/utils.js";
 
 export function updateText(presentation: PresentationIR, operation: UpdateTextOperation): void {
   const slide = findSlide(presentation, operation.slideId);

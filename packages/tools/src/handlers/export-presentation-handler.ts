@@ -1,6 +1,6 @@
 import { createLocalRuntime } from "@deck-forge/core";
 
-import type { ExportPresentationInput, ExportPresentationOutput } from "#/types.js";
+import type { ExportPresentationInput, ExportPresentationOutput } from "#src/types.js";
 
 export async function exportPresentationHandler(
   input: ExportPresentationInput,

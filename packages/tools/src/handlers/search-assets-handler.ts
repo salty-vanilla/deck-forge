@@ -1,6 +1,6 @@
 import { searchImageCandidates } from "@deck-forge/core";
 
-import type { SearchAssetsInput, SearchAssetsOutput } from "#/types.js";
+import type { SearchAssetsInput, SearchAssetsOutput } from "#src/types.js";
 
 export async function searchAssetsHandler(input: SearchAssetsInput): Promise<SearchAssetsOutput> {
   const candidates = await searchImageCandidates(input.query, {

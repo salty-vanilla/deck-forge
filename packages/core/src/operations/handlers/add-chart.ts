@@ -1,6 +1,6 @@
-import type { ChartElementIR, PresentationIR } from "#/index.js";
-import type { AddChartOperation } from "#/operations/types.js";
-import { collectElementIds, findSlide, generateId, getTargetFrame } from "#/operations/utils.js";
+import type { ChartElementIR, PresentationIR } from "#src/index.js";
+import type { AddChartOperation } from "#src/operations/types.js";
+import { collectElementIds, findSlide, generateId, getTargetFrame } from "#src/operations/utils.js";
 
 export function addChart(presentation: PresentationIR, operation: AddChartOperation): void {
   const slide = findSlide(presentation, operation.slideId);

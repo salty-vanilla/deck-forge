@@ -1,6 +1,6 @@
 {
   "name": "@deck-forge/adapters",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "repository": "https://github.com/salty-vanilla/deck-forge.git",
   "files": ["dist", "!dist/**/__tests__/**", "!dist/**/*.test.*", "!dist/tsconfig.tsbuildinfo"],
@@ -21,7 +21,7 @@
     }
   },
   "imports": {
-    "#/*": "./dist/*"
+    "#src/*": "./dist/*"
   },
   "scripts": {
     "build": "tsc -b",

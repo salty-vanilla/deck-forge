@@ -1,6 +1,6 @@
-import type { PresentationIR } from "#/index.js";
-import type { UpdateChartDataOperation } from "#/operations/types.js";
-import { findSlide } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import type { UpdateChartDataOperation } from "#src/operations/types.js";
+import { findSlide } from "#src/operations/utils.js";
 
 export function updateChartData(
   presentation: PresentationIR,

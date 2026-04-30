@@ -1,6 +1,6 @@
-import type { Asset, PresentationIR } from "#/index.js";
-import type { AttachAssetOperation } from "#/operations/types.js";
-import { findSlide } from "#/operations/utils.js";
+import type { Asset, PresentationIR } from "#src/index.js";
+import type { AttachAssetOperation } from "#src/operations/types.js";
+import { findSlide } from "#src/operations/utils.js";
 
 export function attachAsset(presentation: PresentationIR, operation: AttachAssetOperation): void {
   // Add the asset to the registry (or update if it already exists)

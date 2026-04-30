@@ -9,7 +9,7 @@ import type {
   TextElementIR,
   TextStyle,
   ThemeSpec,
-} from "#/index.js";
+} from "#src/index.js";
 
 export type PresentationOperation =
   | AddSlideOperation

@@ -18,8 +18,8 @@ import type {
   PresentationIR,
   RetrievedImageAssetSpec,
   VisualDirectionSpec,
-} from "#/index.js";
-import { type RuntimeSafetyOptions, assertPathAllowed } from "#/runtime/path-policy.js";
+} from "#src/index.js";
+import { type RuntimeSafetyOptions, assertPathAllowed } from "#src/runtime/path-policy.js";
 
 const ONE_PIXEL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBApWw4k4AAAAASUVORK5CYII=";

@@ -1,4 +1,4 @@
-import type { PresentationIR, ValidationIssue } from "#/index.js";
+import type { PresentationIR, ValidationIssue } from "#src/index.js";
 
 export type ValidateLevel = "basic" | "strict" | "export";
 
@@ -17,7 +17,7 @@ export type ValidateResult = {
   presentation?: PresentationIR;
 };
 
-export type ValidationReport = import("#/index.js").ValidationReport;
+export type ValidationReport = import("#src/index.js").ValidationReport;
 
 export type IssueFactory = {
   issue: (

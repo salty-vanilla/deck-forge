@@ -20,8 +20,8 @@ import type {
   TextElementIR,
   ThemeSpec,
   TitleBlock,
-} from "#/index.js";
-import { createResolvedRegions, defaultFrameForRole } from "#/operations/utils.js";
+} from "#src/index.js";
+import { createResolvedRegions, defaultFrameForRole } from "#src/operations/utils.js";
 
 const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 const DEFAULT_SLIDE_SIZE: SlideSize = {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { applyOperations } from "#/operations/apply-operations.js";
-import type { PresentationOperation } from "#/operations/types.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { applyOperations } from "#src/operations/apply-operations.js";
+import type { PresentationOperation } from "#src/operations/types.js";
 
 describe("applyOperations", () => {
   it("applies addSlide and reindexes slides", async () => {

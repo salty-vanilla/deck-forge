@@ -16,7 +16,9 @@ import type {
   PresentationBrief,
   PresentationIR,
   PresentationOperation,
+  PresentationReviewPacket,
   RetrievedImageAssetSpec,
+  SlideImageRenderer,
   SlideSpec,
   ThemeSpec,
   ValidationReport,
@@ -113,6 +115,61 @@ export type ExportPresentationOutput = {
   result: ExportResult;
 };
 
+export type BuildReviewPacketInput = {
+  userRequest: string;
+  presentation: PresentationIR;
+  validationReport?: ValidationReport;
+  grounding?: {
+    language?: string;
+    requestedSlideCount?: number;
+    mustInclude?: string[];
+    mustAvoid?: string[];
+  };
+  renderImages?: boolean;
+  slideIds?: string[];
+  imageFormat?: "png" | "jpeg";
+  imageScale?: number;
+  renderer?: SlideImageRenderer;
+};
+
+export type BuildReviewPacketOutput = {
+  packet: Omit<PresentationReviewPacket, "slideImages"> & {
+    slideImages?: Array<{
+      slideId: string;
+      mimeType: "image/png" | "image/jpeg";
+      dataBase64: string;
+      width?: number;
+      height?: number;
+      source?: "ir-html" | "pptx" | "external";
+      renderer?: string;
+    }>;
+  };
+};
+
+export type ExportSlideImagesInput = {
+  presentation: PresentationIR;
+  format?: "png" | "jpeg";
+  slideIds?: string[];
+  scale?: number;
+  outputDir?: string;
+  workspaceRoot?: string;
+  allowOutsideWorkspace?: boolean;
+  renderer?: SlideImageRenderer;
+};
+
+export type ExportSlideImagesOutput = {
+  images: Array<{
+    slideId: string;
+    mimeType: "image/png" | "image/jpeg";
+    dataBase64?: string;
+    path?: string;
+    width?: number;
+    height?: number;
+    source?: "ir-html" | "pptx" | "external";
+    renderer?: string;
+  }>;
+};
+
 export type ToolDefinition = {
   name: string;
   description: string;
@@ -146,6 +203,7 @@ export type GenerateAssetPlanInput = {
   brief: PresentationBrief;
   slideSpecs: SlideSpec[];
   acquisitionMode?: "generate" | "retrieve" | "auto";
+  imageProvider?: "pexels" | "unsplash" | "pixabay";
 };
 
 export type GenerateAssetPlanOutput = {
@@ -222,6 +280,13 @@ export type AttachRetrievedAssetOutput = {
   presentation: PresentationIR;
 };
 
+export type CreatePresentationArtifacts = {
+  brief: PresentationBrief;
+  deckPlan: DeckPlan;
+  slideSpecs: SlideSpec[];
+  assetSpecs?: AssetSpec[];
+};
+
 export type StructuredIntent = {
   mode: "create" | "modify";
   audience?: string;
@@ -229,6 +294,13 @@ export type StructuredIntent = {
   slideCount?: number;
   tone?: string;
   visualPreset?: "balanced" | "visual_heavy" | "data_heavy";
+  createArtifacts?: CreatePresentationArtifacts;
+  grounding?: {
+    language?: string;
+    requestedSlideCount?: number;
+    mustInclude?: string[];
+    mustAvoid?: string[];
+  };
   constraints?: {
     mustInclude?: string[];
     mustAvoid?: string[];
@@ -261,6 +333,15 @@ export type ParseRequestOutput = {
   intent: StructuredIntent;
 };
 
+export type ValidateAgentCreateArtifactsInput = {
+  userRequest: string;
+  intent: StructuredIntent;
+};
+
+export type ValidateAgentCreateArtifactsOutput = {
+  artifacts: CreatePresentationArtifacts;
+};
+
 export type ReviewIssue = {
   code: string;
   severity: "info" | "warning" | "error";
@@ -274,6 +355,7 @@ export type ReviewPresentationInput = {
   presentation: PresentationIR;
   report?: ValidationReport;
   goal?: string;
+  packet?: PresentationReviewPacket;
   reviewer?: PresentationReviewer;
 };
 

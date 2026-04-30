@@ -5,7 +5,7 @@ import {
   generateAssetPlan,
   generateDeckPlan,
   generateSlideSpecs,
-} from "#/index.js";
+} from "#src/index.js";
 
 describe("spec generation", () => {
   it("creates brief from user request", async () => {
@@ -93,5 +93,48 @@ describe("spec generation", () => {
 
     expect(assetSpecs).toHaveLength(1);
     expect(assetSpecs[0]?.type).toBe("retrieved_image");
+    expect(assetSpecs[0]).toMatchObject({ provider: "pexels" });
+  });
+
+  it("supports explicit retrieved image providers", async () => {
+    const { brief } = await createPresentationSpec({
+      userRequest: "Tokyo event guide",
+      slideCount: 4,
+    });
+    const { assetSpecs } = await generateAssetPlan({
+      brief,
+      acquisitionMode: "retrieve",
+      imageProvider: "pixabay",
+      slideSpecs: [
+        {
+          id: "slide-hero",
+          title: "Tokyo events",
+          intent: {
+            type: "proposal",
+            keyMessage: "Find local events",
+            audienceTakeaway: "Options are clear",
+          },
+          layout: { type: "hero", density: "low", emphasis: "visual" },
+          content: [{ id: "cb-title", type: "title", text: "Tokyo events" }],
+        },
+      ],
+    });
+
+    expect(assetSpecs[0]).toMatchObject({ type: "retrieved_image", provider: "pixabay" });
+  });
+
+  it("keeps fallback generation generic and free of blocked filler strings", async () => {
+    const { brief } = await createPresentationSpec({
+      userRequest: "Customer support transformation roadmap",
+      slideCount: 5,
+    });
+    const { deckPlan } = await generateDeckPlan({ brief });
+    const { slideSpecs } = await generateSlideSpecs({ brief, deckPlan });
+    const serialized = JSON.stringify(slideSpecs);
+
+    expect(serialized).not.toContain("Proposal Point");
+    expect(serialized).not.toContain("Execution Plan");
+    expect(serialized).not.toContain("Key Insight");
+    expect(serialized).not.toContain("Evidence and context supporting this message.");
   });
 });

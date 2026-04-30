@@ -1,19 +1,19 @@
-import type { PresentationIR } from "#/index.js";
-import { addChart } from "#/operations/handlers/add-chart.js";
-import { addImage } from "#/operations/handlers/add-image.js";
-import { addSlide } from "#/operations/handlers/add-slide.js";
-import { addTable } from "#/operations/handlers/add-table.js";
-import { addText } from "#/operations/handlers/add-text.js";
-import { applyTheme } from "#/operations/handlers/apply-theme.js";
-import { attachAsset } from "#/operations/handlers/attach-asset.js";
-import { deleteElement } from "#/operations/handlers/delete-element.js";
-import { moveSlide } from "#/operations/handlers/move-slide.js";
-import { removeSlide } from "#/operations/handlers/remove-slide.js";
-import { setSlideLayout } from "#/operations/handlers/set-slide-layout.js";
-import { updateChartData } from "#/operations/handlers/update-chart-data.js";
-import { updateText } from "#/operations/handlers/update-text.js";
-import type { PresentationOperation } from "#/operations/types.js";
-import { appendOperationRecord, clonePresentation } from "#/operations/utils.js";
+import type { PresentationIR } from "#src/index.js";
+import { addChart } from "#src/operations/handlers/add-chart.js";
+import { addImage } from "#src/operations/handlers/add-image.js";
+import { addSlide } from "#src/operations/handlers/add-slide.js";
+import { addTable } from "#src/operations/handlers/add-table.js";
+import { addText } from "#src/operations/handlers/add-text.js";
+import { applyTheme } from "#src/operations/handlers/apply-theme.js";
+import { attachAsset } from "#src/operations/handlers/attach-asset.js";
+import { deleteElement } from "#src/operations/handlers/delete-element.js";
+import { moveSlide } from "#src/operations/handlers/move-slide.js";
+import { removeSlide } from "#src/operations/handlers/remove-slide.js";
+import { setSlideLayout } from "#src/operations/handlers/set-slide-layout.js";
+import { updateChartData } from "#src/operations/handlers/update-chart-data.js";
+import { updateText } from "#src/operations/handlers/update-text.js";
+import type { PresentationOperation } from "#src/operations/types.js";
+import { appendOperationRecord, clonePresentation } from "#src/operations/utils.js";
 
 export async function applyOperations(
   presentation: PresentationIR,

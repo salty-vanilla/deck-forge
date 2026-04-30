@@ -5,7 +5,7 @@ import {
   buildPresentationIr,
   createPresentationSpec,
   generateDeckPlan,
-} from "#/index.js";
+} from "#src/index.js";
 
 describe("buildPresentationIr", () => {
   it("builds deterministic PresentationIR with resolved slides and generated asset linkage", async () => {

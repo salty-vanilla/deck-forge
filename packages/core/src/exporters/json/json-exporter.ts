@@ -1,5 +1,5 @@
-import type { ExportOptions, ExportResult, Exporter, PresentationIR } from "#/index.js";
-import { savePresentationToFile, serializePresentation } from "#/json.js";
+import type { ExportOptions, ExportResult, Exporter, PresentationIR } from "#src/index.js";
+import { savePresentationToFile, serializePresentation } from "#src/json.js";
 
 export class JsonExporter implements Exporter {
   public readonly format = "json";

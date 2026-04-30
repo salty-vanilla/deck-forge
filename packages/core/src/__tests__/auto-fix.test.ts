@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { AutoFixAction, ValidationIssue, ValidationReport } from "#/index.js";
+import type { AutoFixAction, ValidationIssue, ValidationReport } from "#src/index.js";
 import {
   autoFixPresentation,
   suggestApplyThemeToken,
   suggestMoveInBounds,
   suggestReduceFontSize,
-} from "#/validation/autofix/auto-fix-presentation.js";
+} from "#src/validation/autofix/auto-fix-presentation.js";
 import { presentationFixture } from "./fixtures/presentation.fixture.js";
 
 // ---------------------------------------------------------------------------

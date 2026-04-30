@@ -12,7 +12,7 @@ import type {
   SlideSize,
   TableElementIR,
   TextElementIR,
-} from "#/index.js";
+} from "#src/index.js";
 
 const DATA_URI_IMAGE = /^data:image\/[a-zA-Z0-9+.-]+;base64,/;
 

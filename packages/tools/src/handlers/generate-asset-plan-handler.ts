@@ -1,6 +1,6 @@
 import { generateAssetPlan } from "@deck-forge/core";
 
-import type { GenerateAssetPlanInput, GenerateAssetPlanOutput } from "#/types.js";
+import type { GenerateAssetPlanInput, GenerateAssetPlanOutput } from "#src/types.js";
 
 export async function generateAssetPlanHandler(
   input: GenerateAssetPlanInput,

@@ -1,5 +1,5 @@
-export { createPresentationTools } from "#/strands/tool-adapters.js";
+export { createPresentationTools } from "#src/strands/tool-adapters.js";
 export type {
   StrandsPresentationTool,
   StrandsPresentationToolHandler,
-} from "#/strands/tool-adapters.js";
+} from "#src/strands/tool-adapters.js";

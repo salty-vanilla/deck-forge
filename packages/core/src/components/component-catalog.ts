@@ -6,7 +6,7 @@ import type {
   ComponentPreflightResult,
   ComponentSpec,
   SlideSpec,
-} from "#/index.js";
+} from "#src/index.js";
 
 const DEFAULT_COMPONENTS_DIR = path.join("templates", "components");
 

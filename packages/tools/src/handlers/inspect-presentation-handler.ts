@@ -1,6 +1,6 @@
 import { inspectPresentation } from "@deck-forge/core";
 
-import type { InspectPresentationInput, InspectPresentationOutput } from "#/types.js";
+import type { InspectPresentationInput, InspectPresentationOutput } from "#src/types.js";
 
 export async function inspectPresentationHandler(
   input: InspectPresentationInput,

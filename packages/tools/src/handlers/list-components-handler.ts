@@ -1,6 +1,6 @@
 import { listComponents } from "@deck-forge/core";
 
-import type { ListComponentsInput, ListComponentsOutput } from "#/types.js";
+import type { ListComponentsInput, ListComponentsOutput } from "#src/types.js";
 
 export async function listComponentsHandler(
   input: ListComponentsInput,

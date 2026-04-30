@@ -10,7 +10,7 @@ import type {
   TableElementIR,
   TextElementIR,
   ThemeSpec,
-} from "#/index.js";
+} from "#src/index.js";
 
 export class HtmlExporter implements Exporter {
   public readonly format = "html";

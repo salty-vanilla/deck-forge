@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 
-import { createMcpServer, startMcpServer } from "#/server.js";
-export type { McpServerOptions } from "#/server.js";
+import { createMcpServer, startMcpServer } from "#src/server.js";
+export type { McpServerOptions } from "#src/server.js";
 
 export { createMcpServer, startMcpServer };
 

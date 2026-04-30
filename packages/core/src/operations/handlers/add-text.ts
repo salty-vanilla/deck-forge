@@ -1,5 +1,5 @@
-import type { PresentationIR, TextElementIR } from "#/index.js";
-import type { AddTextOperation } from "#/operations/types.js";
+import type { PresentationIR, TextElementIR } from "#src/index.js";
+import type { AddTextOperation } from "#src/operations/types.js";
 import {
   collectElementIds,
   findSlide,
@@ -7,7 +7,7 @@ import {
   getDefaultTextStyle,
   getTargetFrame,
   toRichText,
-} from "#/operations/utils.js";
+} from "#src/operations/utils.js";
 
 export function addText(presentation: PresentationIR, operation: AddTextOperation): void {
   const slide = findSlide(presentation, operation.slideId);

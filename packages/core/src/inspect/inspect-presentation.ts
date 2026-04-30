@@ -1,6 +1,6 @@
-import type { ElementIR, PresentationIR, SlideIR, TextElementIR } from "#/index.js";
-import { resolveAnchor } from "#/inspect/resolve-anchor.js";
-import type { InspectQuery, InspectResult } from "#/inspect/types.js";
+import type { ElementIR, PresentationIR, SlideIR, TextElementIR } from "#src/index.js";
+import { resolveAnchor } from "#src/inspect/resolve-anchor.js";
+import type { InspectQuery, InspectResult } from "#src/inspect/types.js";
 
 const DEFAULT_INCLUDE: NonNullable<InspectQuery["include"]> = [
   "deck",

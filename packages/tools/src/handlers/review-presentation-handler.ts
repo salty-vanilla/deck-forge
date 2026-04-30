@@ -2,7 +2,7 @@ import type {
   PresentationReviewer,
   ReviewPresentationInput,
   ReviewPresentationOutput,
-} from "#/types.js";
+} from "#src/types.js";
 
 let reviewer: PresentationReviewer | undefined;
 

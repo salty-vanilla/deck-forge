@@ -1,6 +1,6 @@
 import { buildPresentationIr } from "@deck-forge/core";
 
-import type { BuildPresentationIrInput, BuildPresentationIrOutput } from "#/types.js";
+import type { BuildPresentationIrInput, BuildPresentationIrOutput } from "#src/types.js";
 
 export async function buildPresentationIrHandler(
   input: BuildPresentationIrInput,

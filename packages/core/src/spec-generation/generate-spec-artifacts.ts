@@ -11,7 +11,7 @@ import type {
   SlideSpec,
   ToneSpec,
   VisualDirectionSpec,
-} from "#/index.js";
+} from "#src/index.js";
 import type {
   CreatePresentationSpecInput,
   CreatePresentationSpecOutput,
@@ -21,16 +21,19 @@ import type {
   GenerateDeckPlanOutput,
   GenerateSlideSpecsInput,
   GenerateSlideSpecsOutput,
-} from "#/spec-generation/types.js";
+} from "#src/spec-generation/types.js";
 
 export async function createPresentationSpec(
   input: CreatePresentationSpecInput,
 ): Promise<CreatePresentationSpecOutput> {
   const timestamp = new Date().toISOString();
-  const briefId = `brief-${slugifyTitle(input.userRequest)}`;
-  const title = toTitle(input.userRequest);
-  const slideCount = clampSlideCount(input.slideCount);
+  const requestInsights = extractRequestInsights(input.userRequest);
+  const briefTitle = requestInsights.title;
+  const briefId = `brief-${slugifyTitle(briefTitle)}`;
+  const title = briefTitle;
+  const slideCount = clampSlideCount(input.slideCount ?? requestInsights.slideCount);
   const outputFormat = input.outputFormat ?? "pptx";
+  const language = requestInsights.language;
 
   const brief: PresentationBrief = {
     id: briefId,
@@ -41,7 +44,7 @@ export async function createPresentationSpec(
       expectedConcern: ["impact", "risks", "next actions"],
     },
     goal: parseGoal(input.goal ?? input.userRequest),
-    context: `Generated from request at ${timestamp}`,
+    context: `Source request:\n${input.userRequest}\n\nGenerated from request at ${timestamp}`,
     tone: parseTone(input.tone),
     narrative: {
       structure: "proposal",
@@ -56,7 +59,7 @@ export async function createPresentationSpec(
     output: {
       formats: [outputFormat],
       aspectRatio: "16:9",
-      language: "en",
+      language,
     },
     constraints: {
       slideCount,
@@ -102,7 +105,7 @@ export async function generateSlideSpecs(
   const { brief, deckPlan } = input;
   const slideSpecs: SlideSpec[] = flattenSlides(deckPlan).map((slidePlan, index) => {
     const layout = toLayout(slidePlan.intent);
-    const content = toContent(slidePlan, layout);
+    const content = toContent(slidePlan, layout, brief);
     const assets = slidePlan.assetRequirements?.map((requirement) => ({
       assetId: `asset-${slidePlan.id}-${requirement.purpose}`,
       role: requirement.purpose === "icon" ? ("icon" as const) : ("hero" as const),
@@ -130,6 +133,7 @@ export async function generateAssetPlan(
 ): Promise<GenerateAssetPlanOutput> {
   const { brief, slideSpecs } = input;
   const assetSpecs: AssetSpec[] = [];
+  const provider = input.imageProvider ?? "pexels";
 
   for (const slide of slideSpecs) {
     const needsVisual =
@@ -152,7 +156,7 @@ export async function generateAssetPlan(
       assetSpecs.push({
         id: `asset-${slide.id}-hero`,
         type: "retrieved_image",
-        provider: "unsplash",
+        provider,
         query: `${brief.title} ${slide.title} ${slide.intent.keyMessage}`,
         targetSlideIds: [slide.id],
       });
@@ -203,25 +207,41 @@ function buildSlidePlans(slideCount: number, brief: PresentationBrief): SlidePla
       intent = {
         type: "title",
         keyMessage: brief.goal.mainMessage,
-        audienceTakeaway: "The deck objective and context are clear.",
+        audienceTakeaway:
+          brief.output.language === "ja"
+            ? "資料の目的と前提が明確になります。"
+            : "The deck objective and context are clear.",
       };
     } else if (isLast) {
       intent = {
         type: "closing",
-        keyMessage: "Decision and next steps",
+        keyMessage:
+          brief.output.language === "ja" ? "要点と次の確認事項" : "Decision and next steps",
         audienceTakeaway: brief.goal.desiredOutcome,
       };
     } else if (index % 3 === 0) {
       intent = {
-        type: "data_insight",
-        keyMessage: "Data indicates a clear direction.",
-        audienceTakeaway: "Evidence supports the recommendation.",
+        type: "summary",
+        keyMessage:
+          brief.output.language === "ja"
+            ? "提示内容を整理して判断しやすくします。"
+            : "Organize the supplied content for easier judgment.",
+        audienceTakeaway:
+          brief.output.language === "ja"
+            ? "主要な論点を比較できます。"
+            : "The main points are easy to compare.",
       };
     } else if (index % 2 === 0) {
       intent = {
         type: "process",
-        keyMessage: "Execution path is concrete and staged.",
-        audienceTakeaway: "Implementation is feasible with phased delivery.",
+        keyMessage:
+          brief.output.language === "ja"
+            ? "確認すべき流れを具体化します。"
+            : "Clarify the practical sequence to review.",
+        audienceTakeaway:
+          brief.output.language === "ja"
+            ? "次に確認する内容が明確になります。"
+            : "The next review steps are clear.",
       };
     } else {
       intent = {
@@ -334,7 +354,11 @@ function toLayout(intent: SlideIntent): LayoutSpec {
   }
 }
 
-function toContent(slide: SlidePlan, layout: LayoutSpec): ContentBlock[] {
+function toContent(
+  slide: SlidePlan,
+  layout: LayoutSpec,
+  brief?: PresentationBrief,
+): ContentBlock[] {
   const titleBlock: ContentBlock = {
     id: `cb-${slide.id}-title`,
     type: "title",
@@ -348,11 +372,14 @@ function toContent(slide: SlidePlan, layout: LayoutSpec): ContentBlock[] {
       {
         id: `cb-${slide.id}-table`,
         type: "table",
-        caption: "Key metrics",
-        headers: ["Metric", "Current", "Target"],
+        caption: brief?.output.language === "ja" ? "要点整理" : "Key points",
+        headers: brief?.output.language === "ja" ? ["項目", "内容"] : ["Point", "Detail"],
         rows: [
-          ["Adoption", "68%", "80%"],
-          ["Satisfaction", "4.2/5", "4.5/5"],
+          [brief?.output.language === "ja" ? "主旨" : "Main message", slide.intent.keyMessage],
+          [
+            brief?.output.language === "ja" ? "期待される理解" : "Audience takeaway",
+            slide.intent.audienceTakeaway,
+          ],
         ],
       },
     ];
@@ -389,7 +416,13 @@ function toContent(slide: SlidePlan, layout: LayoutSpec): ContentBlock[] {
       density: "medium",
       items: [
         { text: slide.intent.keyMessage, importance: "high" },
-        { text: "Evidence and context supporting this message.", importance: "medium" },
+        {
+          text:
+            brief?.output.language === "ja"
+              ? "入力内容に基づく補足情報を整理します。"
+              : "Supporting detail is organized from the supplied request.",
+          importance: "medium",
+        },
         { text: slide.intent.audienceTakeaway, importance: "high" },
       ],
     },
@@ -409,20 +442,53 @@ function toTitle(userRequest: string): string {
   return `${compact.slice(0, 61)}...`;
 }
 
+type RequestInsights = {
+  language: string;
+  title: string;
+  slideCount?: number;
+};
+
+function extractRequestInsights(userRequest: string): RequestInsights {
+  return {
+    language: detectLanguage(userRequest),
+    title: toTitle(userRequest),
+    slideCount: extractSlideCount(userRequest),
+  };
+}
+
+function detectLanguage(text: string): string {
+  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text) ? "ja" : "en";
+}
+
+function extractSlideCount(text: string): number | undefined {
+  const match = text.match(
+    /(?:スライド|slide|slides|資料)?\s*(\d{1,2})\s*(?:枚|ページ|p|slides?|スライド)/i,
+  );
+  if (!match?.[1]) {
+    return undefined;
+  }
+  return Number.parseInt(match[1], 10);
+}
+
 function parseGoal(seed: string): GoalSpec {
   const text = seed.trim();
+  const ja = detectLanguage(text) === "ja";
   if (!text) {
     return {
       type: "inform",
-      mainMessage: "Present the current status clearly.",
-      desiredOutcome: "Audience aligns on facts and direction.",
+      mainMessage: ja ? "現状をわかりやすく整理する。" : "Present the current status clearly.",
+      desiredOutcome: ja
+        ? "聞き手が事実と方向性を理解できる。"
+        : "Audience aligns on facts and direction.",
     };
   }
 
   return {
     type: "proposal",
     mainMessage: text,
-    desiredOutcome: "Audience agrees on the proposed plan.",
+    desiredOutcome: ja
+      ? "聞き手が提示内容を理解し、次の確認事項を判断できる。"
+      : "Audience agrees on the proposed plan.",
   };
 }
 
@@ -459,19 +525,20 @@ function buildSlideTitle(
   index: number,
   total: number,
 ): string {
+  const ja = detectLanguage(deckTitle) === "ja" || detectLanguage(intent.keyMessage) === "ja";
   if (intent.type === "title") {
     return deckTitle;
   }
   if (intent.type === "closing") {
-    return "Decision and Next Steps";
+    return ja ? "まとめと確認事項" : "Decision and Next Steps";
   }
   if (intent.type === "data_insight") {
-    return `Key Insight ${index}/${total}`;
+    return ja ? `要点整理 ${index}/${total}` : `Fallback Insight ${index}/${total}`;
   }
   if (intent.type === "process") {
-    return `Execution Plan ${index}/${total}`;
+    return ja ? `確認の流れ ${index}/${total}` : `Fallback Sequence ${index}/${total}`;
   }
-  return `Proposal Point ${index}/${total}`;
+  return ja ? `論点 ${index}/${total}` : `Fallback Point ${index}/${total}`;
 }
 
 function clampSlideCount(value: number | undefined): number {

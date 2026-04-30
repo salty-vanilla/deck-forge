@@ -1,4 +1,4 @@
-import type { AssetSpec, DeckPlan, PresentationBrief, SlideSpec } from "#/index.js";
+import type { AssetSpec, DeckPlan, PresentationBrief, SlideSpec } from "#src/index.js";
 
 export type CreatePresentationSpecInput = {
   userRequest: string;
@@ -34,6 +34,7 @@ export type GenerateAssetPlanInput = {
   brief: PresentationBrief;
   slideSpecs: SlideSpec[];
   acquisitionMode?: "generate" | "retrieve" | "auto";
+  imageProvider?: "pexels" | "unsplash" | "pixabay";
 };
 
 export type GenerateAssetPlanOutput = {

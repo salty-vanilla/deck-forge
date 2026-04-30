@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-import { type ToolRuntimePolicy, registerTools } from "#/register-tools.js";
+import { type ToolRuntimePolicy, registerTools } from "#src/register-tools.js";
 
 export type McpServerOptions = {
   policy?: ToolRuntimePolicy;

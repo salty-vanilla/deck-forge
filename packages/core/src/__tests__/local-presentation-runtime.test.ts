@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { JsonExporter } from "#/exporters/json/json-exporter.js";
-import { PptxExporter } from "#/exporters/pptx/pptx-exporter.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { JsonExporter } from "#src/exporters/json/json-exporter.js";
+import { PptxExporter } from "#src/exporters/pptx/pptx-exporter.js";
 import {
   LocalPresentationRuntime,
   createLocalRuntime,
-} from "#/runtime/local-presentation-runtime.js";
+} from "#src/runtime/local-presentation-runtime.js";
 
 describe("LocalPresentationRuntime", () => {
   it("creates a new presentation with defaults", async () => {
@@ -56,6 +56,29 @@ describe("LocalPresentationRuntime", () => {
     const exported = await runtime.export(presentationFixture, { format: "json" });
     expect(exported.format).toBe("json");
     expect(typeof exported.data).toBe("string");
+  });
+
+  it("builds review packets with configured slide image renderer", async () => {
+    const runtime = new LocalPresentationRuntime({
+      exporters: [new JsonExporter()],
+      slideImageRenderer: {
+        render: async () => [
+          {
+            slideId: "slide-text",
+            mimeType: "image/png",
+            data: new Uint8Array([1, 2, 3]),
+          },
+        ],
+      },
+    });
+
+    const packet = await runtime.buildReviewPacket(presentationFixture, {
+      userRequest: "Review visual quality.",
+      renderImages: true,
+    });
+
+    expect(packet.slideImages).toHaveLength(1);
+    expect(packet.slideImages?.[0]?.slideId).toBe("slide-text");
   });
 
   it("throws when format has no exporter", async () => {

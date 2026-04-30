@@ -1,11 +1,11 @@
-import type { PresentationIR, ValidationIssue, ValidationReport } from "#/index.js";
-import { autoFixPresentation } from "#/validation/autofix/auto-fix-presentation.js";
-import { validateAssets } from "#/validation/rules/asset.js";
-import { validateContent } from "#/validation/rules/content.js";
-import { validateLayout } from "#/validation/rules/layout.js";
-import { validateStructural } from "#/validation/rules/structural.js";
-import { validateStyle } from "#/validation/rules/style.js";
-import type { ValidateOptions, ValidateResult } from "#/validation/types.js";
+import type { PresentationIR, ValidationIssue, ValidationReport } from "#src/index.js";
+import { autoFixPresentation } from "#src/validation/autofix/auto-fix-presentation.js";
+import { validateAssets } from "#src/validation/rules/asset.js";
+import { validateContent } from "#src/validation/rules/content.js";
+import { validateLayout } from "#src/validation/rules/layout.js";
+import { validateStructural } from "#src/validation/rules/structural.js";
+import { validateStyle } from "#src/validation/rules/style.js";
+import type { ValidateOptions, ValidateResult } from "#src/validation/types.js";
 
 export async function validatePresentation(
   presentation: PresentationIR,

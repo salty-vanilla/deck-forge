@@ -5,8 +5,8 @@ import { join } from "node:path";
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
-import { presentationFixture } from "#/__tests__/fixtures/presentation.fixture.js";
-import { PptxExporter } from "#/exporters/pptx/pptx-exporter.js";
+import { presentationFixture } from "#src/__tests__/fixtures/presentation.fixture.js";
+import { PptxExporter } from "#src/exporters/pptx/pptx-exporter.js";
 
 const ONE_PIXEL_PNG_DATA_URI =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBApWw4k4AAAAASUVORK5CYII=";
