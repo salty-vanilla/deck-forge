@@ -13,13 +13,17 @@ import type {
   SlideSize,
   TableElementIR,
   TextElementIR,
+  ThemeSpec,
 } from "#src/index.js";
 
 const DATA_URI_IMAGE = /^data:image\/[a-zA-Z0-9+.-]+;base64,/;
 
 type MinimalPptxSlide = {
   background?: { color: string };
-  addText: (text: string, options: Record<string, unknown>) => void;
+  addText: (
+    text: string | Array<{ text: string; options?: Record<string, unknown> }>,
+    options: Record<string, unknown>,
+  ) => void;
   addImage: (options: Record<string, unknown>) => void;
   addTable: (rows: string[][], options: Record<string, unknown>) => void;
   addNotes?: (notes: string[]) => void;
@@ -81,7 +85,7 @@ export class PptxExporter implements Exporter {
 
       for (const element of slideIR.elements) {
         if (element.type === "text") {
-          renderTextElement(slide, element, baseSlideSize);
+          renderTextElement(slide, element, baseSlideSize, presentation.theme);
           continue;
         }
 
@@ -128,11 +132,20 @@ function renderTextElement(
   slide: MinimalPptxSlide,
   element: TextElementIR,
   slideSize: SlideSize,
+  theme: ThemeSpec,
 ): void {
   const frame = toInchFrame(element.frame, slideSize);
-  const text = flattenRichText(element);
+  const textProps = richTextToPptxProps(element);
+  const hasBullet = element.text.paragraphs.some((paragraph) => paragraph.bullet);
 
-  slide.addText(text, {
+  const valign: "top" | "middle" | "bottom" =
+    element.role === "title" || element.role === "callout"
+      ? "middle"
+      : element.role === "footer"
+        ? "bottom"
+        : "top";
+
+  const options: Record<string, unknown> = {
     x: frame.x,
     y: frame.y,
     w: frame.w,
@@ -144,8 +157,67 @@ function renderTextElement(
     fontFace: element.style.fontFamily,
     fontSize: element.style.fontSize,
     color: element.style.color ? normalizeHexColor(element.style.color) : undefined,
-    valign: "top",
+    valign,
+    // Keep text inside the frame instead of letting PowerPoint grow the shape
+    // and overlap adjacent regions.
+    shrinkText: true,
+  };
+
+  if (hasBullet) {
+    options.paraSpaceAfter = 6;
+  }
+
+  if (element.role === "callout") {
+    options.fill = { color: normalizeHexColor(theme.colors.surface) };
+    options.line = {
+      color: normalizeHexColor(theme.colors.secondary ?? theme.colors.textSecondary),
+      width: 0.5,
+    };
+  }
+
+  slide.addText(textProps, options);
+}
+
+function richTextToPptxProps(
+  element: TextElementIR,
+): Array<{ text: string; options?: Record<string, unknown> }> {
+  const props: Array<{ text: string; options?: Record<string, unknown> }> = [];
+
+  element.text.paragraphs.forEach((paragraph, paragraphIndex) => {
+    const isLastParagraph = paragraphIndex === element.text.paragraphs.length - 1;
+    const runs = paragraph.runs.length > 0 ? paragraph.runs : [{ text: "" }];
+
+    runs.forEach((run, runIndex) => {
+      const isLastRun = runIndex === runs.length - 1;
+      const runOptions: Record<string, unknown> = {};
+
+      if (runIndex === 0 && paragraph.bullet) {
+        const indentLevel = paragraph.bullet.indentLevel ?? 0;
+        runOptions.bullet = indentLevel > 0 ? { indent: indentLevel } : true;
+        if (indentLevel > 0) {
+          runOptions.indentLevel = indentLevel;
+        }
+      }
+
+      if (paragraph.alignment && runIndex === 0) {
+        runOptions.align = paragraph.alignment;
+      }
+
+      if (isLastRun && !isLastParagraph) {
+        runOptions.breakLine = true;
+      }
+
+      const entry: { text: string; options?: Record<string, unknown> } = {
+        text: run.text,
+      };
+      if (Object.keys(runOptions).length > 0) {
+        entry.options = runOptions;
+      }
+      props.push(entry);
+    });
   });
+
+  return props;
 }
 
 async function renderImageElement(
@@ -169,6 +241,8 @@ async function renderImageElement(
     y: frame.y,
     w: frame.w,
     h: frame.h,
+    // Preserve aspect ratio: scale the image to fit inside the frame.
+    sizing: { type: "contain", w: frame.w, h: frame.h },
   });
 }
 
@@ -195,12 +269,6 @@ function renderTableElement(
       ? normalizeHexColor(element.style.textStyle.color)
       : normalizeHexColor("#0F172A"),
   });
-}
-
-function flattenRichText(element: TextElementIR): string {
-  return element.text.paragraphs
-    .map((paragraph) => paragraph.runs.map((run) => run.text).join(""))
-    .join("\n");
 }
 
 function toPptxLayout(slideSize: SlideSize): { width: number; height: number } {

@@ -68,6 +68,17 @@ export function validateLayout(
           ),
         );
       }
+
+      if (frame.height > 0 && frame.height < 60) {
+        issues.push(
+          factory.issue(
+            "warning",
+            "layout",
+            `Element ${element.id} frame height ${frame.height} is below the minimum readable height of 60`,
+            `element/${element.id}`,
+          ),
+        );
+      }
     }
 
     for (let leftIndex = 0; leftIndex < slide.elements.length; leftIndex += 1) {

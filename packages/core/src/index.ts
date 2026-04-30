@@ -558,6 +558,7 @@ export type RichParagraph = {
   alignment?: "left" | "center" | "right";
   spacingBefore?: number;
   spacingAfter?: number;
+  bullet?: { indentLevel?: number };
 };
 
 export type RichTextRun = {

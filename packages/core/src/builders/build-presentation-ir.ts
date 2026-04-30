@@ -155,13 +155,36 @@ function buildElements(
   const tableRegionFrame = frameForRole(regions, "table");
   const visualRegionFrame = frameForRole(regions, "visual");
   const calloutRegionFrame = frameForRole(regions, "callout");
+
+  // For "title" layout, split titleRegionFrame vertically into top 60% (title)
+  // and bottom 40% (subtitle) with an 8px gap so they never overlap. For other
+  // layouts the title uses the full title region and the subtitle falls back
+  // to the body region.
+  const titleSubtitleGap = 8;
+  const titleElementFrame =
+    titledLayoutType === "title"
+      ? {
+          x: titleRegionFrame.x,
+          y: titleRegionFrame.y,
+          width: titleRegionFrame.width,
+          height: Math.max(
+            44,
+            Math.round(titleRegionFrame.height * 0.6) - Math.round(titleSubtitleGap / 2),
+          ),
+        }
+      : titleRegionFrame;
   const subtitleBaseFrame =
     titledLayoutType === "title"
       ? {
           x: titleRegionFrame.x,
-          y: titleRegionFrame.y + Math.round(titleRegionFrame.height * 0.62),
+          y: titleElementFrame.y + titleElementFrame.height + titleSubtitleGap,
           width: titleRegionFrame.width,
-          height: Math.max(42, Math.round(titleRegionFrame.height * 0.34)),
+          height: Math.max(
+            42,
+            titleRegionFrame.y +
+              titleRegionFrame.height -
+              (titleElementFrame.y + titleElementFrame.height + titleSubtitleGap),
+          ),
         }
       : bodyRegionFrame;
 
@@ -190,7 +213,7 @@ function buildElements(
           blockId: block.id,
           text: block.text,
           role: "title",
-          frame: titleRegionFrame,
+          frame: titleElementFrame,
           style: {
             fontFamily: theme.typography.fontFamily.heading,
             fontSize: theme.typography.fontSize.title,
@@ -698,12 +721,15 @@ function toRichText(text: string): RichText {
 }
 
 function bulletListToRichText(block: Extract<ContentBlock, { type: "bullet_list" }>): RichText {
-  const lines: string[] = [];
+  const paragraphs: RichText["paragraphs"] = [];
 
   const visit = (items: typeof block.items, depth: number): void => {
     for (const item of items) {
-      const indent = "  ".repeat(depth);
-      lines.push(`${indent}• ${item.text}`);
+      paragraphs.push({
+        runs: [{ text: item.text }],
+        bullet: { indentLevel: depth },
+        spacingAfter: 6,
+      });
       if (item.children && item.children.length > 0) {
         visit(item.children, depth + 1);
       }
@@ -712,11 +738,7 @@ function bulletListToRichText(block: Extract<ContentBlock, { type: "bullet_list"
 
   visit(block.items, 0);
 
-  return {
-    paragraphs: lines.map((line) => ({
-      runs: [{ text: line }],
-    })),
-  };
+  return { paragraphs };
 }
 
 function normalizeTableRows(block: TableBlock): string[][] {
@@ -762,23 +784,50 @@ function frameForRole(
   return defaultFrameForRole(role, DEFAULT_SLIDE_SIZE);
 }
 
+const MIN_SLOT_HEIGHT = 60;
+
 function splitVertical(frame: ResolvedFrame, count: number): ResolvedFrame[] {
   if (count <= 1) {
     return [frame];
   }
 
-  const gap = 12;
-  const totalGap = gap * (count - 1);
-  const slotHeight = Math.max(44, Math.floor((frame.height - totalGap) / count));
+  const gap = count >= 3 ? 18 : 12;
+
+  // Clamp count so each sub-frame has at least MIN_SLOT_HEIGHT.
+  // (frame.height + gap) / (MIN_SLOT_HEIGHT + gap) is the largest count that satisfies
+  // count * MIN_SLOT_HEIGHT + (count - 1) * gap <= frame.height.
+  const maxByMinHeight = Math.max(
+    1,
+    Math.floor((frame.height + gap) / (MIN_SLOT_HEIGHT + gap)),
+  );
+  const effectiveCount = Math.min(count, maxByMinHeight);
+
+  const totalGap = gap * (effectiveCount - 1);
+  const slotHeight = Math.max(
+    MIN_SLOT_HEIGHT,
+    Math.floor((frame.height - totalGap) / effectiveCount),
+  );
   const frames: ResolvedFrame[] = [];
 
-  for (let index = 0; index < count; index += 1) {
+  for (let index = 0; index < effectiveCount; index += 1) {
     frames.push({
       x: frame.x,
       y: frame.y + index * (slotHeight + gap),
       width: frame.width,
       height: slotHeight,
     });
+  }
+
+  // If we had to clamp, reuse the last slot for the overflow blocks so they
+  // do not spill into adjacent regions. Validation surfaces the resulting
+  // overlap as a warning.
+  if (effectiveCount < count) {
+    const lastFrame = frames[frames.length - 1];
+    if (lastFrame) {
+      for (let index = effectiveCount; index < count; index += 1) {
+        frames.push({ ...lastFrame });
+      }
+    }
   }
 
   return frames;
