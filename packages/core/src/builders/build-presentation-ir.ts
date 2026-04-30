@@ -344,15 +344,14 @@ function buildElements(
 function buildAssetRegistry(
   assetSpecs: AssetSpec[],
   slides: SlideIR[],
-  slideSpecs: SlideSpec[],
+  _slideSpecs: SlideSpec[],
 ): Asset[] {
   const knownSlideIds = new Set(slides.map((slide) => slide.id));
   const imageUsageByAsset = collectImageUsages(slides);
-  const slideRefsByAsset = collectSlideAssetRefs(slideSpecs);
   const builtAssets = new Map<string, Asset>();
 
   for (const spec of assetSpecs) {
-    const asset = toAsset(spec, imageUsageByAsset, slideRefsByAsset, knownSlideIds);
+    const asset = toAsset(spec, imageUsageByAsset, knownSlideIds);
     builtAssets.set(asset.id, asset);
   }
 
@@ -402,40 +401,18 @@ function collectImageUsages(slides: SlideIR[]): Map<Id, AssetUsage[]> {
 }
 
 /**
- * Collect asset-slide associations declared in SlideSpec.assets[].
- *
- * We deliberately do NOT synthesize a phantom elementId here.  The
- * `slideId` alone is enough to record that an asset is referenced by a
- * slide; an elementId is only meaningful when an actual ImageElementIR
- * with that id exists in slide.elements.  Using a made-up id would make
- * the validator report "non-existent element" warnings for every asset.
- *
- * Instead we build a Set<assetId> per slideId and let toAsset() add a
- * usage entry whose elementId matches the first real image element that
- * uses the asset on that slide (via imageUsageByAsset), or omit it if
- * there is no such element.  If the asset has no rendered element yet we
- * still track the slideId so downstream tooling can look up which slides
- * need the asset.
+ * (Removed in 0.2.2) `collectSlideAssetRefs` previously synthesized phantom
+ * `asset-ref-*` element IDs per slide. We no longer record asset-slide
+ * associations for slides that lack a real ImageElementIR — the validator
+ * relies on real elementIds only.
  */
-function collectSlideAssetRefs(slideSpecs: SlideSpec[]): Map<Id, AssetUsage[]> {
-  // We return an empty map because we no longer manufacture phantom usages.
-  // Asset-slide associations for assets that lack an image block are tracked
-  // via assetSpec.targetSlideIds, which mergeTargetSlideUsage handles only
-  // when a real knownSlideId is present.
-  void slideSpecs; // retained for API compatibility
-  return new Map<Id, AssetUsage[]>();
-}
 
 function toAsset(
   spec: AssetSpec,
   imageUsageByAsset: Map<Id, AssetUsage[]>,
-  slideRefsByAsset: Map<Id, AssetUsage[]>,
   knownSlideIds: Set<Id>,
 ): Asset {
-  const usage = dedupeUsages([
-    ...(imageUsageByAsset.get(spec.id) ?? []),
-    ...(slideRefsByAsset.get(spec.id) ?? []),
-  ]);
+  const usage = dedupeUsages([...(imageUsageByAsset.get(spec.id) ?? [])]);
   if (spec.type === "generated_image") {
     return {
       id: spec.id,
@@ -451,7 +428,7 @@ function toAsset(
         prompt: spec.prompt,
         createdAt: DEFAULT_TIMESTAMP,
       },
-      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "hero", knownSlideIds),
+      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
     };
   }
 
@@ -472,7 +449,7 @@ function toAsset(
         attributionText: spec.attributionText,
         createdAt: DEFAULT_TIMESTAMP,
       },
-      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "inline", knownSlideIds),
+      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
     };
   }
 
@@ -493,7 +470,7 @@ function toAsset(
         attributionText: spec.selected?.attributionText,
         createdAt: DEFAULT_TIMESTAMP,
       },
-      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "inline", knownSlideIds),
+      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
     };
   }
 
@@ -508,7 +485,7 @@ function toAsset(
         source: "derived",
         createdAt: DEFAULT_TIMESTAMP,
       },
-      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "diagram", knownSlideIds),
+      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
     };
   }
 
@@ -523,7 +500,7 @@ function toAsset(
         source: "derived",
         createdAt: DEFAULT_TIMESTAMP,
       },
-      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "icon", knownSlideIds),
+      usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
     };
   }
 
@@ -537,7 +514,7 @@ function toAsset(
       source: "derived",
       createdAt: DEFAULT_TIMESTAMP,
     },
-    usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, "inline", knownSlideIds),
+    usage: mergeTargetSlideUsage(usage, spec.targetSlideIds, knownSlideIds),
   };
 }
 
@@ -550,27 +527,21 @@ function toAsset(
  * We do NOT synthesize phantom element IDs for slides where the asset has
  * no rendered element — that caused "non-existent element" validator warnings.
  */
+/**
+ * (Kept as a typed pass-through in 0.2.2.) Historically this merged
+ * `targetSlideIds` into `usage[]` by synthesizing phantom `asset-target-*`
+ * element IDs. We now refuse to fabricate elementIds the slide does not
+ * actually contain, so the only thing left to do is dedupe and return the
+ * existing usages.  `targetSlideIds` and `knownSlideIds` are accepted so
+ * callers do not need to change shape if a future revision reintroduces
+ * non-element-bearing usage tracking.
+ */
 function mergeTargetSlideUsage(
   usage: AssetUsage[],
-  targetSlideIds: Id[] | undefined,
-  _role: AssetUsage["role"],
-  knownSlideIds: Set<Id>,
+  _targetSlideIds: Id[] | undefined,
+  _knownSlideIds: Set<Id>,
 ): AssetUsage[] {
-  if (!targetSlideIds || targetSlideIds.length === 0) {
-    return usage;
-  }
-  // Only keep slides that are in the presentation (no phantom entries).
-  const validTargetSlideIds = targetSlideIds.filter((id) => knownSlideIds.has(id));
-  if (validTargetSlideIds.length === 0) {
-    return usage;
-  }
-  // Attach the target slide IDs to existing usages if possible; if there is
-  // already a usage for a target slide, skip the duplicate.
-  const existingSlideIds = new Set(usage.map((u) => u.slideId));
-  const extra = validTargetSlideIds
-    .filter((slideId) => !existingSlideIds.has(slideId))
-    .flatMap<AssetUsage>(() => []); // no phantom elements — skip
-  return dedupeUsages([...usage, ...extra]);
+  return dedupeUsages(usage);
 }
 
 function dedupeUsages(usages: AssetUsage[]): AssetUsage[] {
