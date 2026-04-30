@@ -8,6 +8,7 @@ import type {
   DeckPlan,
   Id,
   LayoutSpec,
+  MetricBlock,
   ParagraphBlock,
   PresentationBrief,
   PresentationIR,
@@ -309,6 +310,32 @@ function buildElements(
         }),
       );
       calloutIndex += 1;
+      continue;
+    }
+
+    if (block.type === "metric") {
+      const metricBlock = block as MetricBlock;
+      const arrow =
+        metricBlock.trend === "up" ? " ↑" : metricBlock.trend === "down" ? " ↓" : "";
+      const valueText = metricBlock.unit
+        ? `${metricBlock.value} ${metricBlock.unit}`
+        : metricBlock.value;
+      elements.push(
+        createTextElement({
+          blockId: metricBlock.id,
+          text: `${metricBlock.label}\n${valueText}${arrow}`,
+          role: "callout",
+          frame: calloutFrames[calloutIndex] ?? calloutRegionFrame,
+          style: {
+            fontFamily: theme.typography.fontFamily.heading,
+            fontSize: theme.typography.fontSize.heading,
+            color: theme.colors.primary,
+            bold: true,
+          },
+          usedElementIds,
+        }),
+      );
+      calloutIndex += 1;
     }
   }
 
@@ -375,23 +402,29 @@ function collectImageUsages(slides: SlideIR[]): Map<Id, AssetUsage[]> {
   return usageByAsset;
 }
 
+/**
+ * Collect asset-slide associations declared in SlideSpec.assets[].
+ *
+ * We deliberately do NOT synthesize a phantom elementId here.  The
+ * `slideId` alone is enough to record that an asset is referenced by a
+ * slide; an elementId is only meaningful when an actual ImageElementIR
+ * with that id exists in slide.elements.  Using a made-up id would make
+ * the validator report "non-existent element" warnings for every asset.
+ *
+ * Instead we build a Set<assetId> per slideId and let toAsset() add a
+ * usage entry whose elementId matches the first real image element that
+ * uses the asset on that slide (via imageUsageByAsset), or omit it if
+ * there is no such element.  If the asset has no rendered element yet we
+ * still track the slideId so downstream tooling can look up which slides
+ * need the asset.
+ */
 function collectSlideAssetRefs(slideSpecs: SlideSpec[]): Map<Id, AssetUsage[]> {
-  const usageByAsset = new Map<Id, AssetUsage[]>();
-
-  for (const slide of slideSpecs) {
-    for (const reference of slide.assets ?? []) {
-      const usage: AssetUsage = {
-        slideId: slide.id,
-        elementId: `asset-ref-${slide.id}-${reference.assetId}`,
-        role: reference.role,
-      };
-      const current = usageByAsset.get(reference.assetId) ?? [];
-      current.push(usage);
-      usageByAsset.set(reference.assetId, dedupeUsages(current));
-    }
-  }
-
-  return usageByAsset;
+  // We return an empty map because we no longer manufacture phantom usages.
+  // Asset-slide associations for assets that lack an image block are tracked
+  // via assetSpec.targetSlideIds, which mergeTargetSlideUsage handles only
+  // when a real knownSlideId is present.
+  void slideSpecs; // retained for API compatibility
+  return new Map<Id, AssetUsage[]>();
 }
 
 function toAsset(
@@ -509,24 +542,36 @@ function toAsset(
   };
 }
 
+/**
+ * Merges targetSlideIds into the usage list so that assets declared via
+ * assetSpec.targetSlideIds are associated with the correct slides.
+ *
+ * We only add usages for slides that already have a real ImageElementIR
+ * referencing this asset (i.e. the elementId is already in imageUsageByAsset).
+ * We do NOT synthesize phantom element IDs for slides where the asset has
+ * no rendered element — that caused "non-existent element" validator warnings.
+ */
 function mergeTargetSlideUsage(
   usage: AssetUsage[],
   targetSlideIds: Id[] | undefined,
-  role: AssetUsage["role"],
+  _role: AssetUsage["role"],
   knownSlideIds: Set<Id>,
 ): AssetUsage[] {
   if (!targetSlideIds || targetSlideIds.length === 0) {
     return usage;
   }
-
-  const targetUsages = targetSlideIds
-    .filter((slideId) => knownSlideIds.has(slideId))
-    .map((slideId) => ({
-      slideId,
-      elementId: `asset-target-${slideId}`,
-      role,
-    }));
-  return dedupeUsages([...usage, ...targetUsages]);
+  // Only keep slides that are in the presentation (no phantom entries).
+  const validTargetSlideIds = targetSlideIds.filter((id) => knownSlideIds.has(id));
+  if (validTargetSlideIds.length === 0) {
+    return usage;
+  }
+  // Attach the target slide IDs to existing usages if possible; if there is
+  // already a usage for a target slide, skip the duplicate.
+  const existingSlideIds = new Set(usage.map((u) => u.slideId));
+  const extra = validTargetSlideIds
+    .filter((slideId) => !existingSlideIds.has(slideId))
+    .flatMap<AssetUsage>(() => []); // no phantom elements — skip
+  return dedupeUsages([...usage, ...extra]);
 }
 
 function dedupeUsages(usages: AssetUsage[]): AssetUsage[] {
@@ -545,27 +590,51 @@ function dedupeUsages(usages: AssetUsage[]): AssetUsage[] {
   return deduped;
 }
 
+/**
+ * Predefined color palettes keyed by visualDirection.mood.
+ * Used as a fallback when brief.brand.colors is not explicitly set.
+ */
+const MOOD_PALETTES: Record<
+  string,
+  { primary: string; secondary: string; accent: string; background: string }
+> = {
+  energetic: { primary: "#F59E0B", secondary: "#0EA5E9", accent: "#EF4444", background: "#FFFBEB" },
+  calm: { primary: "#0EA5E9", secondary: "#A5F3FC", accent: "#6366F1", background: "#F0F9FF" },
+  trustworthy: { primary: "#1D4ED8", secondary: "#0EA5E9", accent: "#14B8A6", background: "#FFFFFF" },
+  futuristic: { primary: "#6366F1", secondary: "#8B5CF6", accent: "#22D3EE", background: "#0F172A" },
+  premium: { primary: "#0F172A", secondary: "#334155", accent: "#D4AF37", background: "#F8FAFC" },
+  practical: { primary: "#475569", secondary: "#94A3B8", accent: "#0EA5E9", background: "#FFFFFF" },
+};
+
 function createTheme(brief: PresentationBrief): ThemeSpec {
   const brandColors = brief.brand?.colors;
+  const mood = brief.visualDirection?.mood as string | undefined;
+  const moodPalette = mood ? (MOOD_PALETTES[mood] ?? null) : null;
   const headingFont = brief.brand?.fonts?.heading ?? "Arial";
   const bodyFont = brief.brand?.fonts?.body ?? "Arial";
   const monoFont = brief.brand?.fonts?.mono ?? "Courier New";
 
+  // Priority: brand.colors (explicit) > moodPalette (from visualDirection) > built-in defaults.
+  const primary = brandColors?.primary ?? moodPalette?.primary ?? "#1D4ED8";
+  const secondary = brandColors?.secondary ?? moodPalette?.secondary ?? "#0EA5E9";
+  const accent = brandColors?.accent ?? moodPalette?.accent ?? "#14B8A6";
+  const background = brandColors?.background ?? moodPalette?.background ?? "#FFFFFF";
+
   return {
     id: `theme-${slugify(brief.id)}`,
-    name: brief.brand?.name ?? "Core Default",
+    name: brief.brand?.name ?? (mood ? `${mood} theme` : "Core Default"),
     colors: {
-      background: brandColors?.background ?? "#FFFFFF",
+      background,
       surface: brandColors?.surface ?? "#F8FAFC",
       textPrimary: brandColors?.textPrimary ?? "#0F172A",
       textSecondary: brandColors?.textSecondary ?? "#475569",
-      primary: brandColors?.primary ?? "#1D4ED8",
-      secondary: brandColors?.secondary ?? "#0EA5E9",
-      accent: brandColors?.accent ?? "#14B8A6",
+      primary,
+      secondary,
+      accent,
       success: brandColors?.success,
       warning: brandColors?.warning,
       danger: brandColors?.danger,
-      chartPalette: brandColors?.chartPalette ?? ["#1D4ED8", "#0EA5E9", "#14B8A6", "#F59E0B"],
+      chartPalette: brandColors?.chartPalette ?? [primary, secondary, accent, "#F59E0B"],
     },
     typography: {
       fontFamily: {

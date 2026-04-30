@@ -80,30 +80,49 @@ export function defaultFrameForRole(
   const contentWidth = slideSize.width - DEFAULT_PADDING * 2;
   const contentHeight = slideSize.height - DEFAULT_PADDING * 2;
 
-  if (role === "title") {
-    return {
-      x: DEFAULT_PADDING,
-      y: DEFAULT_PADDING,
-      width: contentWidth,
-      height: Math.round(contentHeight * 0.2),
-    };
-  }
+  // Title band: top 20% of content area.
+  const titleHeight = Math.round(contentHeight * 0.2);
+  // Content zone: below title, above footer.
+  const footerHeight = 40;
+  const footerY = slideSize.height - DEFAULT_PADDING - footerHeight;
+  const bodyY = DEFAULT_PADDING + titleHeight;
+  // Vertical space between title-bottom and footer-top.
+  const bodyHeight = footerY - bodyY;
+  // Reserve the bottom 22% of bodyHeight for callout / caption strips.
+  const calloutHeight = Math.round(bodyHeight * 0.22);
+  const mainHeight = bodyHeight - calloutHeight;
+  // Split main area horizontally: body 60% left, visual 40% right.
+  const gap = 16;
+  const visualWidth = Math.round(contentWidth * 0.4);
+  const bodyWidth = contentWidth - visualWidth - gap;
+  const visualX = DEFAULT_PADDING + bodyWidth + gap;
 
-  if (role === "footer") {
-    return {
-      x: DEFAULT_PADDING,
-      y: slideSize.height - DEFAULT_PADDING - 40,
-      width: contentWidth,
-      height: 40,
-    };
-  }
+  switch (role) {
+    case "title":
+      return { x: DEFAULT_PADDING, y: DEFAULT_PADDING, width: contentWidth, height: titleHeight };
 
-  return {
-    x: DEFAULT_PADDING,
-    y: DEFAULT_PADDING,
-    width: contentWidth,
-    height: contentHeight,
-  };
+    case "visual":
+      // Right 40% of the body zone.
+      return { x: visualX, y: bodyY, width: visualWidth, height: mainHeight };
+
+    case "callout":
+      // Bottom strip of the body zone.
+      return { x: DEFAULT_PADDING, y: bodyY + mainHeight, width: contentWidth, height: calloutHeight };
+
+    case "sidebar":
+      // Narrow left panel (25% of content width).
+      return { x: DEFAULT_PADDING, y: bodyY, width: Math.round(contentWidth * 0.25), height: bodyHeight };
+
+    case "footer":
+      return { x: DEFAULT_PADDING, y: footerY, width: contentWidth, height: footerHeight };
+
+    case "chart":
+    case "table":
+    case "body":
+    default:
+      // Left 60% body zone (safe default that leaves room for a visual region).
+      return { x: DEFAULT_PADDING, y: bodyY, width: bodyWidth, height: mainHeight };
+  }
 }
 
 export function getTargetFrame(slide: SlideIR, regionId?: string): ResolvedFrame {
